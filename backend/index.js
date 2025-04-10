@@ -12,6 +12,7 @@ const app = express();
 
 app.use(cors({
     origin: ['http://localhost:5174', 'https://almaq-frontend.vercel.app'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH','DELETE'],
     credentials: true,
 }));
 app.use(cookieParser());
