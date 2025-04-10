@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 app.use(cors({
     origin: ['http://localhost:5174', 'https://almaq-frontend.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'PATCH','DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    allowedHeaders: ['Content-Type','multipart/form-data', 'Authorization', 'Cookie'],
     credentials: true,
 }));
 app.use(cookieParser());
