@@ -1,0 +1,16 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node Modules
+node_modules/
+
+# Environment variables
+.env
+
+# Build Output
+dist/
+build/
+
+storage-key.json
