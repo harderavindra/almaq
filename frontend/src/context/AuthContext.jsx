@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post('/auth/refresh');
       setUser(res.data.user); // Or fetch user info if only token returned
+      console.log(res.data.user)
     } catch {
       setUser(null);
     }

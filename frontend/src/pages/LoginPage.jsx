@@ -12,7 +12,7 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       await login({ email, password });
-      navigate('/dashboard');
+      navigate('/');
 
     } catch (err) {
       alert('Login failed');
