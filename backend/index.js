@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-    origin: ['http://localhost:5174', 'https://vercel-frontend-henna.vercel.app'],
+    origin: ['http://localhost:5174', 'https://almaq-frontend.vercel.app'],
     credentials: true,
 }));
 app.use(cookieParser());
