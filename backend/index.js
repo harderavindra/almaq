@@ -5,15 +5,10 @@ import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import cookieParser from 'cookie-parser';
 
-import { testGCSConnection } from './utils/gcsClient.js';
-
-import path from 'path';
-
 
 dotenv.config();
 
 const app = express();
-
 
 app.use(cors({
     origin: ['http://localhost:5174', 'https://almaq-frontend.vercel.app'],
@@ -23,17 +18,14 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-
-
 app.use(express.json());
 
-testGCSConnection()
+
 
 mongoose.connect(process.env.MONGODB_URL)
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.error("MongoDB connection error:", err));
 
-    // testGCSConnection();
 
 app.get('/', (req, res) => {
     res.send({ message: 'Server is running' });
