@@ -1,9 +1,8 @@
 import axios from 'axios';
 
+const base = import.meta.env.VITE_API_BASE_URL || '';
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}api`  
-    : '/api', 
+  baseURL: `${base}api`,
   withCredentials: true,
 });
 

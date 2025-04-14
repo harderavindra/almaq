@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import NewUserPage from './pages/NewUserPage';
 import AdminLayout from './components/layout/AdminLayout';
+import FileUpload from './pages/FileUpload';
 
 function App() {
 

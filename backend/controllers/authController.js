@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
+import { generateSignedUploadUrl, generateSignedUrl } from '../utils/generateSignedUrl.js';
+
 import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); 
@@ -101,68 +103,40 @@ export const getAllUsers = async (req, res) => {
   res.status(200).json(users);
 };
 
-
-export const uploadProfilePic = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
-
+export const getFileUrl = async (req, res) => {
   try {
-    console.log(req.user.id)
-    const user = await User.findById(req.user.id); // Assuming user is stored in req.user after authentication
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const { fileName } = req.body;
+    console.log(req.body)
 
-    // Delete old profile pic if it exists
-    if (user.profilePic) {
-      const oldPicPath = path.join(__dirname, '../uploads/', user.profilePic);
-      // You can delete the old file here if necessary using fs.unlinkSync(oldPicPath)
+    if (!fileName) {
+      return res.status(400).json({ message: 'Missing fileName or fileType' });
     }
 
-    // Save the new profile pic path to the user model
-    user.profilePic = `uploads/${req.file.filename}`;
-    await user.save();
-
-    res.json({ message: 'Profile picture uploaded successfully', profilePic: user.profilePic });
-  } catch (err) {
-    console.error('Error uploading profile picture:', err);
-    res.status(500).json({ message: 'Server error' });
+    const signedUrl = await generateSignedUrl(fileName);
+    
+    console.log(signedUrl,"signedUrl")
+    return res.status(200).json( signedUrl); 
+  } catch (error) {
+    console.error('Error generating signed upload URL:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
-};
+}
 
-// Handle Profile Pic Deletion
-export const deleteProfilePic = async (req, res) => {
+export const getProfilePicUploadUrl = async (req, res) => {
   try {
-    // Find the user from the database
-    const user = await User.findById(req.user.id); // Assuming user is stored in req.user after authentication
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const { fileName, contentType } = req.body;
+    console.log(req.body)
 
-    // Check if there is a profile pic to delete
-    if (user.profilePic) {
-      // Construct the file path for the profile picture
-      const picPath = path.join(__dirname, '../', user.profilePic);
-
-      // Check if the file exists before trying to delete it
-      fs.access(picPath, fs.constants.F_OK, (err) => {
-        if (err) {
-          console.error('Profile pic not found:', err);
-          return res.status(404).json({ message: 'Profile picture not found' });
-        }
-
-        // Delete the file from the filesystem
-        fs.unlinkSync(picPath);
-        console.log('Profile picture deleted successfully!');
-
-        // Remove the profile picture path from the user's record
-        user.profilePic = null;
-        user.save();
-
-        res.json({ message: 'Profile picture deleted successfully' });
-      });
-    } else {
-      res.status(400).json({ message: 'No profile picture to delete' });
+    if (!fileName || !contentType) {
+      return res.status(400).json({ message: 'Missing fileName or fileType' });
     }
-  } catch (err) {
-    console.error('Error deleting profile picture:', err);
-    res.status(500).json({ message: 'Server error' });
+
+    const signedUrl = await generateSignedUploadUrl(fileName, contentType); 
+    
+    console.log(signedUrl,"signedUrl")
+    return res.status(200).json( signedUrl); 
+  } catch (error) {
+    console.error('Error generating signed upload URL:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

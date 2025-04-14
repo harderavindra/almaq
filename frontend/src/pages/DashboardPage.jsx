@@ -1,3 +1,4 @@
+import UploadComponent from '../components/common/Upload';
 import AvatarChange from '../components/user/AvatarChange';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,7 +8,7 @@ const DashboardPage = () => {
   if (loading) return <p>Loading...</p>;
 
   if (!user) return <p>User not logged in</p>;
-  const profilePicUrl = user.profilePic 
+  const profilePicUrl = user.profilePic
     ? `${import.meta.env.VITE_API_BASE_URL}${user.profilePic}`  // Assuming user.profilePic stores the relative path
     : 'default-profile-pic-url';  // Default image if no profile pic
 
@@ -20,6 +21,7 @@ const DashboardPage = () => {
 
       <p>Role: {user.role}</p>
       <button onClick={logout}>Logout</button>
+      <UploadComponent/>
 
       {/* Add more user-specific data here */}
     </div>
