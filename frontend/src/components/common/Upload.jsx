@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from '../../api/axios'; // Your configured axios instance for backend
 import axiosDirect from 'axios'; // Direct axios for GCS PUT upload
 
-const UploadComponent = () => {
+const UploadComponent = ({ userId, currentProfilePic,onSuccess }) => {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState('');
@@ -17,13 +17,20 @@ const UploadComponent = () => {
     if (!file) return;
 
     try {
-      // Step 1: Get signed URL from backend
-      const response = await axios.post('/auth/get-upload-url', {
-        fileName: file.name,
-        contentType: file.type,
-      });
 
-      const { signedUrl, publicUrl } = response.data;
+        const timestamp = Date.now();
+        const folderPrefix = 'profile-pic/';
+        const uniqueFileName = `${folderPrefix}${timestamp}-${file.name}`;
+    
+        const response = await axios.get('/signed-url', {
+          params: {
+            type: 'upload',
+            fileName: uniqueFileName,
+            contentType: file.type,
+          },
+        });
+    
+        const { signedUrl, fileUrl } = response.data;
 
       // Step 2: Upload to GCS
       await axiosDirect.put(signedUrl, file, {
@@ -36,16 +43,43 @@ const UploadComponent = () => {
         },
       });
 
-      setUploadedUrl(publicUrl);
+      setUploadedUrl(fileUrl);
+
+        // Step 3: Update profilePic for specific user
+    await axios.put('/auth/update-profile-pic', {
+        userId,            // from props
+        profilePic: fileUrl,
+      });
+      if (onSuccess) onSuccess();
+  
+      alert('Profile picture uploaded and updated!');
+
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed!');
     }
   };
 
+  const handleDeleteProfilePic = async () => {
+      try {
+        const filePath = currentProfilePic; // The file path in GCS
+    
+        const response = await axios.post('/auth/delete-file', { filePath, userId });
+        if (onSuccess) onSuccess();
+        alert(response.data.message); // Success message
+        // Optionally update frontend user state here to reflect changes
+       
+    
+      } catch (error) {
+        console.error('Error deleting file:', error);
+        alert('Failed to delete file!');
+      }
+    };
+
   return (
     <div style={{ padding: '1rem', maxWidth: '400px' }}>
       <h3>Upload File</h3>
+      <button onClick={handleDeleteProfilePic}>Delete2</button>
       <input type="file" onChange={handleFileChange} />
       <button onClick={handleUpload} disabled={!file} style={{ marginTop: '10px' }}>
         Upload

@@ -2,8 +2,10 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import authRoutes from './routes/authRoutes.js';
 import cookieParser from 'cookie-parser';
+import authRoutes from './routes/authRoutes.js';
+import signedUrlRouter from './routes/signedUrlRouter.js'; // adjust path as needed
+
 
 
 dotenv.config();
@@ -33,6 +35,8 @@ app.get('/', (req, res) => {
 
 
 app.use('/api/auth', authRoutes);
+app.use('/api', signedUrlRouter);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

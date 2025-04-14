@@ -7,8 +7,11 @@ import {
   logoutUser,
   getAllUsers,
   refreshToken,
-  getProfilePicUploadUrl,
-  getFileUrl
+  upadeProfilePic,
+  deleteProfilePic,
+  updateProfile,
+  getProfile,
+  deleteUser,
 } from '../controllers/authController.js';
 
 import {
@@ -28,12 +31,16 @@ router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 router.post('/refresh', refreshToken); // this is the route you need
 // Protected Route (Admin only)
-router.get('/', protect, isAdmin, getAllUsers);
-router.post('/getfileUrl', getFileUrl);
-router.post('/get-upload-url', getProfilePicUploadUrl);
+router.get('/users', protect, isAdmin, getAllUsers);
+router.get('/users', protect, isAdmin, getAllUsers);
+router.put('/update-profile-pic', upadeProfilePic)
+router.post('/delete-file', deleteProfilePic);
+router.route('/users/:userId')
+  .get(protect, getProfile)
+  .put(protect, updateProfile)
+  .delete(protect, deleteUser)
+  ;
 
-
-// router.post('/delete-profile-pic', deleteProfilePic); // Optional: implement
 
 
 

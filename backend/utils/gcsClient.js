@@ -16,16 +16,16 @@ export const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 export const testGCSConnection = async () => {
   try {
     const [buckets] = await storage.getBuckets();
-    console.log('✅ Buckets found:');
+    console.log('Buckets found:');
     buckets.forEach((b) => console.log(' -', b.name));
 
     const [exists] = await bucket.exists();
     if (exists) {
-      console.log(`✅ Bucket "${bucket.name}" exists and is accessible.`);
+      console.log(`Bucket "${bucket.name}" exists and is accessible.`);
     } else {
-      console.warn(`⚠️ Bucket "${bucket.name}" does not exist.`);
+      console.warn(`Bucket "${bucket.name}" does not exist.`);
     }
   } catch (err) {
-    console.error('❌ GCS Connection Error:', err.message);
+    console.error('GCS Connection Error:', err.message);
   }
 };
