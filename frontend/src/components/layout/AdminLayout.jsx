@@ -11,6 +11,7 @@ const AdminLayout = ({ children }) => {
           <ul style={{ listStyle: 'none', padding: '0' }}>
             <li><Link to="/" style={{ color: 'white', padding: '10px', display: 'block' }}>Dashboard</Link></li>
             <li><Link to="/new-user" style={{ color: 'white', padding: '10px', display: 'block' }}>New User</Link></li>
+            <li><Link to="/users" style={{ color: 'white', padding: '10px', display: 'block' }}>Users</Link></li>
           </ul>
         </nav>
       </div>
