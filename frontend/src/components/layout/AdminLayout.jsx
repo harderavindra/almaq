@@ -1,28 +1,36 @@
 // src/components/Layout.js
 import { Link, Outlet } from 'react-router-dom';
-
+import Logo from '../../assets/almaq-logo.svg'
+import Avatar from '../common/Avatar';
+import { useAuth } from '../../context/AuthContext';
 const AdminLayout = ({ children }) => {
+  const { user, logout, loading } = useAuth();
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
+    <div className='bg-gray-100 min-h-screen flex flex-col '>
       {/* Sidebar */}
-      <div style={{ width: '250px', background: '#2c3e50', color: 'white' }}>
-        <h2 style={{ padding: '20px' }}>Admin Panel</h2>
+      <div className='flex justify-between py-4 px-10'>
+        <h2>
+        <img src={Logo} height='40' alt='Logo' />
+        </h2>
         <nav>
-          <ul style={{ listStyle: 'none', padding: '0' }}>
-            <li><Link to="/" style={{ color: 'white', padding: '10px', display: 'block' }}>Dashboard</Link></li>
-            <li><Link to="/new-user" style={{ color: 'white', padding: '10px', display: 'block' }}>New User</Link></li>
-            <li><Link to="/users" style={{ color: 'white', padding: '10px', display: 'block' }}>Users</Link></li>
+          <ul className='flex gap-6'>
+            <li className='px-3'><Link to="/" >Dashboard</Link></li>
+            <li className='px-3'><Link to="/new-user" >New User</Link></li>
+            <li className='px-3'><Link to="/users" >Users</Link></li>
           </ul>
         </nav>
+        <div className='flex gap-3'>
+          <Avatar src={user.profilePic} />
+          <div>
+            <p className='leading-none capitalize font-semibold'>{user.name}</p>
+            <p className='leading-none'>{user.email}</p>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: '20px', background: '#ecf0f1' }}>
-        <header>
-          <h1>Welcome to Admin Panel</h1>
-        </header>
+      <div className=' ' >
         <main>{<Outlet />        }</main>
-        <footer style={{ marginTop: '20px', textAlign: 'center' }}>Footer Content</footer>
       </div>
     </div>
   );

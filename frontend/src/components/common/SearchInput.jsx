@@ -32,7 +32,7 @@ const SearchInput = ({
         value={internalValue}
         onChange={(e) => setInternalValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+        className="w-full pl-10 pr-4 py-2 bg-gray-100  border-0  rounded-md focus:outline-blue-100/50 focus:bg-blue-50/50 focus:ring-4 focus:ring-blue-300/30"
       />
     </div>
   );

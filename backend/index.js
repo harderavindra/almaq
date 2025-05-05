@@ -6,14 +6,18 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import signedUrlRouter from './routes/signedUrlRouter.js'; // adjust path as needed
 
-
+import departmentRoutes from "./routes/department.routes.js";
+import farmerRoutes from "./routes/farmer.routes.js";
+import plantRoutes from "./routes/plant.routes.js";
+import orderRoutes from "./routes/order.routes.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors({
-    origin: ['http://localhost:5174', 'https://almaq-frontend.vercel.app'],
+    origin: ['http://localhost:5174','http://localhost:5173', 'https://almaq-frontend.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'PATCH','DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     credentials: true,
@@ -36,6 +40,10 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api', signedUrlRouter);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/farmers", farmerRoutes);
+app.use("/api/plants", plantRoutes);
+app.use("/api/orders", orderRoutes);
 
 
 const PORT = process.env.PORT || 3000;

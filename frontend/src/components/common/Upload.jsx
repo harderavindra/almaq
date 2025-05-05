@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import axios from '../../api/axios'; // Your configured axios instance for backend
-import axiosDirect from 'axios'; // Direct axios for GCS PUT upload
+import React, { useState, useRef, useEffect } from 'react';
+import { FiCamera } from 'react-icons/fi';
+import axios from '../../api/axios';
+import axiosDirect from 'axios';
 
-const UploadComponent = ({ userId, currentProfilePic,onSuccess }) => {
+const UploadComponent = ({ userId, currentProfilePic, onSuccess }) => {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -13,26 +15,30 @@ const UploadComponent = ({ userId, currentProfilePic,onSuccess }) => {
     setProgress(0);
   };
 
+  useEffect(() => {
+    if (file) {
+      handleUpload();
+    }
+  }, [file]);
+
   const handleUpload = async () => {
     if (!file) return;
 
     try {
+      const timestamp = Date.now();
+      const folderPrefix = 'profile-pic/';
+      const uniqueFileName = `${folderPrefix}${timestamp}-${file.name}`;
 
-        const timestamp = Date.now();
-        const folderPrefix = 'profile-pic/';
-        const uniqueFileName = `${folderPrefix}${timestamp}-${file.name}`;
-    
-        const response = await axios.get('/signed-url', {
-          params: {
-            type: 'upload',
-            fileName: uniqueFileName,
-            contentType: file.type,
-          },
-        });
-    
-        const { signedUrl, fileUrl } = response.data;
+      const response = await axios.get('/signed-url', {
+        params: {
+          type: 'upload',
+          fileName: uniqueFileName,
+          contentType: file.type,
+        },
+      });
 
-      // Step 2: Upload to GCS
+      const { signedUrl, fileUrl } = response.data;
+
       await axiosDirect.put(signedUrl, file, {
         headers: {
           'Content-Type': file.type,
@@ -45,14 +51,12 @@ const UploadComponent = ({ userId, currentProfilePic,onSuccess }) => {
 
       setUploadedUrl(fileUrl);
 
-        // Step 3: Update profilePic for specific user
-    await axios.put('/auth/update-profile-pic', {
-        userId,            // from props
+      await axios.put('/auth/update-profile-pic', {
+        userId,
         profilePic: fileUrl,
       });
+
       if (onSuccess) onSuccess();
-  
-      alert('Profile picture uploaded and updated!');
 
     } catch (error) {
       console.error('Upload failed:', error);
@@ -61,44 +65,50 @@ const UploadComponent = ({ userId, currentProfilePic,onSuccess }) => {
   };
 
   const handleDeleteProfilePic = async () => {
-      try {
-        const filePath = currentProfilePic; // The file path in GCS
-    
-        const response = await axios.post('/auth/delete-file', { filePath, userId });
-        if (onSuccess) onSuccess();
-        alert(response.data.message); // Success message
-        // Optionally update frontend user state here to reflect changes
-       
-    
-      } catch (error) {
-        console.error('Error deleting file:', error);
-        alert('Failed to delete file!');
-      }
-    };
+    try {
+      const filePath = currentProfilePic;
+
+      const response = await axios.post('/auth/delete-file', { filePath, userId });
+      if (onSuccess) onSuccess();
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      alert('Failed to delete file!');
+    }
+  };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '400px' }}>
-      <h3>Upload File</h3>
-      <button onClick={handleDeleteProfilePic}>Delete2</button>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload} disabled={!file} style={{ marginTop: '10px' }}>
-        Upload
+    <div className="text-center mt-4">
+      {currentProfilePic && (
+        <button
+          onClick={handleDeleteProfilePic}
+          className="text-red-600 underline mb-3 block"
+        >
+          Delete Profile Picture
+        </button>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        type="file"
+        onChange={handleFileChange}
+        ref={fileInputRef}
+        className="hidden"
+      />
+
+      {/* Upload button */}
+      <button
+        onClick={() => fileInputRef.current.click()}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mx-auto"
+      >
+        <FiCamera className="w-5 h-5" />
+        Upload Image
       </button>
 
       {progress > 0 && (
-        <div style={{ marginTop: '10px' }}>
-          <progress value={progress} max="100" style={{ width: '100%' }} />
+        <div className="mt-4">
+          <progress value={progress} max="100" className="w-full" />
           <div>{progress}%</div>
-        </div>
-      )}
-
-      {uploadedUrl && (
-        <div style={{ marginTop: '10px' }}>
-          <strong>Upload complete:</strong>
-          <br />
-          <a href={uploadedUrl} target="_blank" rel="noopener noreferrer">
-            View File
-          </a>
         </div>
       )}
     </div>

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import Avatar from '../components/common/Avatar';
-import axios from '../api/axios';
-import { useToast } from '../context/ToastContext';
-import UploadComponent from '../components/common/Upload';
+import Avatar from '../common/Avatar';
+import axios from '../../api/axios';
+import { useToast } from '../../context/ToastContext';
+import UploadComponent from '../common/Upload';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const ProfilePage = () => {
-    const { userId } = useParams(); // Extract userId from URL
+const ProfilePage = ({userId}) => {
     const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
@@ -31,7 +30,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [userId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -66,8 +65,33 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) return <p className="text-center">Loading...</p>;
-  if (!user) return <p className="text-center">No user data found.</p>;
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-6 bg-white rounded shadow animate-pulse">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-24 h-24 bg-gray-300 rounded-full mb-4" />
+          <div className="w-32 h-4 bg-gray-300 rounded mb-2" />
+          <div className="w-48 h-4 bg-gray-200 rounded" />
+        </div>
+  
+        <div className="space-y-4">
+          <div>
+            <div className="w-24 h-4 bg-gray-300 rounded mb-2" />
+            <div className="w-full h-10 bg-gray-200 rounded" />
+          </div>
+          <div>
+            <div className="w-16 h-4 bg-gray-300 rounded mb-2" />
+            <div className="w-full h-10 bg-gray-200 rounded" />
+          </div>
+          <div className="flex justify-between mt-6">
+            <div className="w-24 h-10 bg-gray-300 rounded" />
+            <div className="w-20 h-6 bg-gray-200 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+    if (!user) return <p className="text-center">No user data found.</p>;
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow">asd
