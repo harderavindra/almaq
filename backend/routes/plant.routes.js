@@ -1,17 +1,17 @@
 import express from "express";
-import Plant from "../models/plant.model.js";
+import PlantType from "../models/plant.model.js";
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
     console.log(req.body);
-  const plant = await Plant.create(req.body);
-  res.status(201).json(plant);
+  const plantTypes = await PlantType.create(req.body);
+  res.status(201).json(plantTypes);
 });
 
 router.get("/", async (req, res) => {
-  const plants = await Plant.find();
-  res.json(plants);
+  const plantTypes = await PlantType.find();
+  res.json(plantTypes);
 });
 
 export default router; 

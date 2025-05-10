@@ -12,6 +12,9 @@ import OrderListPage from './pages/OrderListPage';
 import OrderViewPage from './pages/OrderViewPage';
 
 import DeliveredChalanPage from './pages/DeliveredChalanPage';
+import ChallanCreatePage from './pages/ChallanCreatePage';
+import ChallanListPage from './pages/ChallanListPage';
+import ChallanViewPage from './pages/ChallanViewPage';
 function App() {
 
   return (
@@ -25,10 +28,13 @@ function App() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/new-user" element={<NewUserPage />} />
               <Route path="/users" element={<UsersPage />} />
-              <Route path="/order" element={<OrderCreatePage />} />
+              <Route path="/add-order" element={<OrderCreatePage />} />
               <Route path="/orders" element={<OrderListPage />} />
               <Route path="/orders/:id" element={<OrderViewPage />} />
-              <Route path="/chalan" element={<DeliveredChalanPage />} />
+              <Route path="/challan" element={<DeliveredChalanPage />} />
+              <Route path="/add-challan" element={<ChallanCreatePage />} />
+              <Route path="/challans" element={<ChallanListPage />} />
+              <Route path="/challans/:challanId" element={<ChallanViewPage />} />
 
               {/* <Route path="/users/:userId" element={<ProfilePage />} /> */}
             </Route>

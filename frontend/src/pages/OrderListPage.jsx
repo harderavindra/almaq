@@ -37,6 +37,18 @@ const OrderListPage = () => {
         setSearchParams({ status: statusFilter, page: newPage });
     };
 
+    const handleDelete = async (orderId) => {
+        if (!window.confirm("Are you sure you want to delete this order?")) return;
+      
+        try {
+          await api.delete(`/orders/${orderId}`);
+          setOrders((prev) => prev.filter((o) => o._id !== orderId));
+        } catch (err) {
+          console.error("Failed to delete order", err);
+          alert("Error deleting the order.");
+        }
+      };
+
     return (
         <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
             <OrderSidebar activeStatus={statusFilter} onChange={handleStatusChange} />
@@ -70,6 +82,12 @@ const OrderListPage = () => {
                                         <Link to={`/orders/${o._id}`} className="text-blue-600 underline">
                                             View
                                         </Link>
+                                        <button
+    onClick={() => handleDelete(o._id)}
+    className="text-red-600 underline"
+  >
+    Delete
+  </button>
                                     </td>
                                 </tr>
                             ))}

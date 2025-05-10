@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { createOrder } from '../services/orderService';
+import React, { useEffect, useState } from 'react';
+import api from '../api/axios';
 import InputText from '../components/common/InputText';
 import Button from '../components/common/Button';
-import api from '../api/axios'; // Adjust the import based on your axios setup
+
 const OrderCreatePage = () => {
-    const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [farmers, setFarmers] = useState([]);
   const [plants, setPlants] = useState([]);
+
   const [form, setForm] = useState({
     department: '',
     orderLetterNumber: '',
@@ -14,92 +15,133 @@ const OrderCreatePage = () => {
     contactPerson: '',
     contactNumber: '',
     status: 'Draft',
-    items: [{ farmer: '', plantType: '', quantity: '', amount: '', status: 'Pending' }],
+    items: [
+      {
+        farmer: '',
+        plants: [
+          { plantType: '', quantity: '', amount: '', status: 'Pending' }
+        ]
+      }
+    ]
   });
 
-  // Fetch master data
   useEffect(() => {
-    const fetchMasters = async () => {
-      try {
-        const [deptRes, farmerRes, plantRes] = await Promise.all([
-          api.get('/departments'),
-          api.get('/farmers'),
-          api.get('/plants'),
-        ]);
-        setDepartments(deptRes.data);
-        setFarmers(farmerRes.data);
-        setPlants(plantRes.data);
-        console.log(deptRes.data, farmerRes.data, plantRes.data);
-      } catch (err) {
-        console.error('Error fetching masters:', err);
-      }
+    const fetchData = async () => {
+      const [deptRes, farmerRes, plantRes] = await Promise.all([
+        api.get('/departments'),
+        api.get('/farmers'),
+        api.get('/plants'),
+      ]);
+      setDepartments(deptRes.data);
+      setFarmers(farmerRes.data);
+      setPlants(plantRes.data);
     };
-    fetchMasters();
+
+    fetchData();
   }, []);
 
-  // Handle form field change
-  const handleDepartmentChange = (e) => {
-    setForm({ ...form, department: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleItemChange = (index, e) => {
-    const { name, value } = e.target;
-    const items = [...form.items];
-    items[index][name] = value;
+  const handleFarmerChange = (index, e) => {
+    const newItems = [...form.items];
+    newItems[index].farmer = e.target.value;
+    setForm({ ...form, items: newItems });
+  };
 
-    // Calculate amount if plantType and quantity are provided
-    if (name === 'plantType' || name === 'quantity') {
-      const plant = plants.find(p => p._id === items[index].plantType);
-      if (plant && items[index].quantity) {
-        const amount = plant.price * items[index].quantity;
-        items[index].amount = amount;
+  const handlePlantChange = (farmerIndex, plantIndex, e) => {
+    const { name, value } = e.target;
+    const updatedItems = [...form.items];
+    const plantItem = updatedItems[farmerIndex].plants[plantIndex];
+
+    plantItem[name] = value;
+
+    if ((name === 'plantType' || name === 'quantity') && plantItem.plantType && plantItem.quantity) {
+      const plant = plants.find(p => p._id === plantItem.plantType);
+      const qty = parseFloat(plantItem.quantity);
+      if (plant && !isNaN(qty)) {
+        plantItem.amount = plant.price * qty;
       }
     }
 
-    setForm({ ...form, items });
+    setForm({ ...form, items: updatedItems });
   };
 
-  const addItem = () => {
+  const addFarmer = () => {
     setForm({
       ...form,
-      items: [...form.items, { farmer: '', plantType: '', quantity: '', amount: '', status: 'Pending' }]
+      items: [
+        ...form.items,
+        {
+          farmer: '',
+          plants: [{ plantType: '', quantity: '', amount: '', status: 'Pending' }]
+        }
+      ]
     });
   };
 
-  const removeItem = (index) => {
-    const items = form.items.filter((_, i) => i !== index);
-    setForm({ ...form, items });
+  const removeFarmer = (index) => {
+    const updatedItems = form.items.filter((_, i) => i !== index);
+    setForm({ ...form, items: updatedItems });
+  };
+
+  const addPlantToFarmer = (index) => {
+    const updatedItems = [...form.items];
+    updatedItems[index].plants.push({ plantType: '', quantity: '', amount: '', status: 'Pending' });
+    setForm({ ...form, items: updatedItems });
+  };
+
+  const removePlantFromFarmer = (farmerIndex, plantIndex) => {
+    const updatedItems = [...form.items];
+    updatedItems[farmerIndex].plants = updatedItems[farmerIndex].plants.filter((_, i) => i !== plantIndex);
+    setForm({ ...form, items: updatedItems });
+  };
+
+  const isFormValid = () => {
+    if (!form.department || !form.orderLetterNumber || !form.orderDate || !form.contactPerson || !form.contactNumber) {
+      return false;
+    }
+
+    for (const f of form.items) {
+      if (!f.farmer) return false;
+      for (const p of f.plants) {
+        if (!p.plantType || !p.quantity) return false;
+      }
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid()) {
+      alert('Please complete all required fields');
+      return;
+    }
+
     try {
       await api.post('/orders', form);
+      console.log('Order created successfully',form);
+      return;
       alert('Order created successfully!');
-      // reset form
-      setForm({
-        department: '',
-        orderLetterNumber: '',
-        orderDate: '',
-        contactPerson: '',
-        contactNumber: '',
-        status: 'Draft',
-        items: [{ farmer: '', plantType: '', quantity: '', amount: '', status: 'Pending' }]
-      });    } catch (err) {
-      console.error('Failed to create order:', err);
-      alert('Error creating order.');
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to create order');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto p-4">
-      <h2 className="text-xl font-bold mb-4">Create New Order</h2>
+    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Create Order</h2>
 
       <label className="block mb-2 font-medium">Department</label>
       <select
         name="department"
         value={form.department}
-        onChange={handleDepartmentChange}
+        onChange={handleChange}
         className="border rounded-md w-full px-3 py-2 mb-4"
       >
         <option value="">Select Department</option>
@@ -107,91 +149,88 @@ const OrderCreatePage = () => {
           <option key={dept._id} value={dept._id}>{dept.name}</option>
         ))}
       </select>
-      <InputText
-  label="Order Letter Number"
-  name="orderLetterNumber"
-  value={form.orderLetterNumber}
-  handleOnChange={(e) => setForm({ ...form, orderLetterNumber: e.target.value })}
-/>
 
-<label className="block mb-1 mt-4">Order Date</label>
-<input
-  type="date"
-  name="orderDate"
-  value={form.orderDate}
-  onChange={(e) => setForm({ ...form, orderDate: e.target.value })}
-  className="border rounded-md w-full px-3 py-2 mb-4"
-/>
+      <InputText label="Order Letter Number" name="orderLetterNumber" value={form.orderLetterNumber} handleOnChange={handleChange} />
+      <label className="block mb-1 mt-4">Order Date</label>
+      <input
+        type="date"
+        name="orderDate"
+        value={form.orderDate}
+        onChange={handleChange}
+        className="border rounded-md w-full px-3 py-2 mb-4"
+      />
+      <InputText label="Contact Person" name="contactPerson" value={form.contactPerson} handleOnChange={handleChange} />
+      <InputText label="Contact Number" name="contactNumber" type="number" value={form.contactNumber} handleOnChange={handleChange} />
 
-<InputText
-  label="Contact Person"
-  name="contactPerson"
-  value={form.contactPerson}
-  handleOnChange={(e) => setForm({ ...form, contactPerson: e.target.value })}
-/>
-
-<InputText
-  label="Contact Number"
-  name="contactNumber"
-  value={form.contactNumber}
-  handleOnChange={(e) => setForm({ ...form, contactNumber: e.target.value })}
-/>
-
-      {form.items.map((item, idx) => (
-        <div key={idx} className="mb-4 border p-4 rounded">
-          <div className="flex justify-between mb-2">
-            <h3 className="font-semibold">Item {idx + 1}</h3>
+      {form.items.map((f, fi) => (
+        <div key={fi} className="border p-4 my-4 bg-gray-50 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold">Farmer {fi + 1}</h3>
             {form.items.length > 1 && (
-              <button type="button" onClick={() => removeItem(idx)} className="text-red-500">Remove</button>
+              <button type="button" className="text-red-600 text-sm" onClick={() => removeFarmer(fi)}>Remove</button>
             )}
           </div>
 
-          <label className="block mb-1">Farmer</label>
+          <label className="block mb-1">Select Farmer</label>
           <select
-            name="farmer"
-            value={item.farmer}
-            onChange={e => handleItemChange(idx, e)}
-            className="border rounded-md w-full px-3 py-2 mb-2"
+            value={f.farmer}
+            onChange={(e) => handleFarmerChange(fi, e)}
+            className="border rounded-md w-full px-3 py-2 mb-4"
           >
             <option value="">Select Farmer</option>
-            {farmers.map(f => (
-              <option key={f._id} value={f._id}>{f.name}</option>
+            {farmers.map(farmer => (
+              <option key={farmer._id} value={farmer._id}>{farmer.name}</option>
             ))}
           </select>
 
-          <label className="block mb-1">Plant Type</label>
-          <select
-            name="plantType"
-            value={item.plantType}
-            onChange={e => handleItemChange(idx, e)}
-            className="border rounded-md w-full px-3 py-2 mb-2"
-          >
-            <option value="">Select Plant Type</option>
-            {plants.map(p => (
-              <option key={p._id} value={p._id}>{p.type}</option>
-            ))}
-          </select>
+          {f.plants.map((plant, pi) => (
+            <div key={pi} className="bg-white border p-3 rounded mb-3">
+              <label className="block mb-1">Plant Type</label>
+              <select
+                name="plantType"
+                value={plant.plantType}
+                onChange={(e) => handlePlantChange(fi, pi, e)}
+                className="border rounded-md w-full px-3 py-2 mb-2"
+              >
+                <option value="">Select Plant Type</option>
+                {plants.map(p => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
 
-          <InputText
-            label="Quantity"
-            name="quantity"
-            value={item.quantity}
-            handleOnChange={e => handleItemChange(idx, e)}
-          />
+              <InputText
+                label="Quantity"
+                name="quantity"
+                type="number"
+                value={plant.quantity}
+                handleOnChange={(e) => handlePlantChange(fi, pi, e)}
+              />
 
-          <InputText
-            label="Amount"
-            name="amount"
-            value={item.amount}
-            handleOnChange={e => handleItemChange(idx, e)}
-            disabled
-          />
+              <InputText
+                label="Amount"
+                name="amount"
+                value={plant.amount}
+                disabled
+                handleOnChange={() => {}}
+              />
+
+              {f.plants.length > 1 && (
+                <button type="button" className="text-red-500 text-sm mt-1" onClick={() => removePlantFromFarmer(fi, pi)}>Remove Plant</button>
+              )}
+            </div>
+          ))}
+
+          <button type="button" className="text-blue-600 text-sm" onClick={() => addPlantToFarmer(fi)}>+ Add Plant</button>
         </div>
       ))}
 
-      <button type="button" onClick={addItem} className="mb-4 text-blue-600">+ Add Item</button>
+      <button type="button" onClick={addFarmer} className="text-blue-700 font-medium mb-4">
+        + Add Farmer
+      </button>
 
-      <Button type="submit">Submit Order</Button>
+      <Button type="submit" disabled={!isFormValid()}>
+        Submit Order
+      </Button>
     </form>
   );
 };

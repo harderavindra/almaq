@@ -1,14 +1,38 @@
+// models/order.model.js
 import mongoose from "mongoose";
 
-const itemSchema = new mongoose.Schema({
-  farmer: { type: mongoose.Schema.Types.ObjectId, ref: "Farmer" },
-  plantType: { type: mongoose.Schema.Types.ObjectId, ref: "Plant" },
-  quantity: Number,
-  amount: Number,
-  status: { type: String, enum: ["Pending", "InProgress", "Canceled", "Delivered"], default: "Pending" },
-  itemReferenceNumber: String,
+// Plant Entry Schema
+const plantEntrySchema = new mongoose.Schema({
+  plantType: { type: mongoose.Schema.Types.ObjectId, ref: "PlantType", required: true },
+  quantity: { type: Number, required: true },
+  amount: { type: Number, required: true },
+
+  // Delivery tracking
+  deliveredQuantity: { type: Number, default: 0 },
+  deliveryStatus: {
+    type: String,
+    enum: ["Pending", "Partially Delivered", "Delivered", "Returned"],
+    default: "Pending"
+  },
+  deliveredAt: { type: Date },
+  returnReason: String
 });
 
+// Item Schema (for each item in the order)
+export const itemSchema = new mongoose.Schema({
+  farmer: { type: mongoose.Schema.Types.ObjectId, ref: "Farmer" },
+  plants: [plantEntrySchema],
+  itemReferenceNumber: String,
+  status: { type: String, enum: ["Pending", "InProgress", "Canceled", "Delivered"], default: "Pending" },
+  overallDeliveryStatus: {
+    type: String,
+    enum: ["Pending", "InProgress", "Partially Delivered", "Fully Delivered", "Returned"],
+    default: "Pending"
+  },
+  returnReason: { type: String }
+}, { _id: true });
+
+// Order Schema
 const orderSchema = new mongoose.Schema({
   department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
   items: [itemSchema],

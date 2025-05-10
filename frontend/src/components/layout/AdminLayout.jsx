@@ -15,7 +15,8 @@ const AdminLayout = ({ children }) => {
         <nav>
           <ul className='flex gap-6'>
             <li className='px-3'><Link to="/" >Dashboard</Link></li>
-            <li className='px-3'><Link to="/new-user" >New User</Link></li>
+            <li className='px-3'><Link to="/orders" >Orders</Link></li>
+            <li className='px-3'><Link to="/challans" >Challans</Link></li>
             <li className='px-3'><Link to="/users" >Users</Link></li>
           </ul>
         </nav>

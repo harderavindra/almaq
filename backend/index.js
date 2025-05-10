@@ -10,8 +10,10 @@ import departmentRoutes from "./routes/department.routes.js";
 import farmerRoutes from "./routes/farmer.routes.js";
 import plantRoutes from "./routes/plant.routes.js";
 import orderRoutes from "./routes/order.routes.js";
+import masterRoutes from "./routes/master.routes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
+import challanRoutes from "./routes/challan.routes.js";
 dotenv.config();
 
 const app = express();
@@ -44,6 +46,8 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/farmers", farmerRoutes);
 app.use("/api/plants", plantRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/master", masterRoutes);
+app.use("/api/challans", challanRoutes);
 
 
 const PORT = process.env.PORT || 3000;

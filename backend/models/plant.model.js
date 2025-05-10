@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
-const plantSchema = new mongoose.Schema({
-  type: String,
-  price: Number
+// Rename the model to reflect "PlantType" if that's your intention
+const plantTypeSchema = new mongoose.Schema({
+  name: String, // assuming you want a name field to match your pipeline
+  price: Number,  // assuming each plant type has a price
 }, { timestamps: true });
 
-export default mongoose.model("Plant", plantSchema);
+export default mongoose.model("PlantType", plantTypeSchema);
