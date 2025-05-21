@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import SidebarMaster from '../components/layout/SidebarMaster';
 import FarmerMaster from '../components/master/FarmerMaster';
 import PlantTypeMaster from '../components/master/PlantTypeMaster';
-import Vehicle from '../../../backend/models/Vehicle';
 import VehicleMaster from '../components/master/VehicleMaster';
 import DepartmentsMaster from '../components/master/DepartmentMaster';
 const tabHeadings = {
