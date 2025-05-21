@@ -15,6 +15,7 @@ import DeliveredChalanPage from './pages/DeliveredChalanPage';
 import ChallanCreatePage from './pages/ChallanCreatePage';
 import ChallanListPage from './pages/ChallanListPage';
 import ChallanViewPage from './pages/ChallanViewPage';
+import MasterPage from './pages/MasterPage';
 function App() {
 
   return (
@@ -35,6 +36,8 @@ function App() {
               <Route path="/add-challan" element={<ChallanCreatePage />} />
               <Route path="/challans" element={<ChallanListPage />} />
               <Route path="/challans/:challanId" element={<ChallanViewPage />} />
+              <Route path="/master/:tab?" element={<MasterPage />} />
+              <Route path="/download" element={<DeliveredChalanPage />} />
 
               {/* <Route path="/users/:userId" element={<ProfilePage />} /> */}
             </Route>

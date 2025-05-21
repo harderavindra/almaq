@@ -1,14 +1,12 @@
-// routes/chalaanRoutes.js
-
-import express from "express";
-import { createChallan, deleteChallan, getAllChallans, getChallanById } from "../controllers/challan.controller.js"; // Adjust the import path as needed
+import express from 'express';
+import { createChallan, deleteChallan, getAllChallans, getChallanById, getDeliveredChallanItems, updateChallanItemDeliveryStatus } from '../controllers/challan.controller.js';
 
 const router = express.Router();
-
-router.post("/create", createChallan);
-router.get("/", getAllChallans);
-router.get("/:id", getChallanById); // Assuming you have a getChallanById function
-// router.degetlete("/:id", deleteChallan);
-router.delete("/:id", deleteChallan);
+router.get('/fully-delivered', getDeliveredChallanItems);
+router.post('/', createChallan);
+router.get('/:id', getChallanById);
+router.get('/', getAllChallans);
+router.delete('/:id', deleteChallan);
+router.patch('/:challanId/items/:itemId/deliver', updateChallanItemDeliveryStatus);
 
 export default router;

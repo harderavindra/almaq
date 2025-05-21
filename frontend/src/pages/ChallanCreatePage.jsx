@@ -1,213 +1,223 @@
-import React, { useState, useEffect } from "react";
-import api from "../api/axios";
-import AddItemFromOrders from "../components/order/AddItemFromOrders";
-import { FiPlus, FiTruck } from "react-icons/fi";
-import Button from "../components/common/Button";
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiBox, FiCalendar, FiPlus, FiTruck, FiUser, FiX } from 'react-icons/fi';
+import InputText from '../components/common/InputText';
+import SelectDropdown from '../components/common/SelectDropdown';
+import OrderItemSelector from '../components/challan/OrderItemSelector';
+import { RiPlantLine } from "react-icons/ri";
+import IconButton from '../components/common/IconButton';
+import Button from '../components/common/Button';
+import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 
 const ChallanCreatePage = () => {
-  const [vehicleId, setVehicleId] = useState("");
-  const [challanDate, setChallanDate] = useState("");
-  const [items, setItems] = useState([]);
+  const navigate = useNavigate();
+
   const [vehicles, setVehicles] = useState([]);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState(false);
-  const [showAddItemPopup, setShowAddItemPopup] = useState(false);
+  const [orderItems, setOrderItems] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
+  const [form, setForm] = useState({
+    challanNo: '',
+    vehicleId: '',
+    dispatchDate: '',
+    routeDetails: '',
+    notes: '',
+    items: []
+  });
 
-  useEffect(() => {
-    api.get("/master/vehicle").then((res) => {
-      setVehicles(res.data || []);
-    });
-  }, []);
+  const [newItem, setNewItem] = useState({ orderItemId: '', quantity: '' });
+  const [showSelector, setShowSelector] = useState(false);
 
-  const handleRemoveItem = (indexToRemove) => {
-    setItems((prevItems) => prevItems.filter((_, index) => index !== indexToRemove));
+  // Load vehicles and orderItems on mount
+ useEffect(() => {
+  const fetchChallanNo = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/utility/generate-number?type=CHL');
+      setForm(prev => ({ ...prev, challanNo: response.data.number }));
+      setMessage({ type: 'success', text: 'Challan No generated successfully' });
+    } catch (error) {
+      console.error('Error fetching Challan No:', error);
+      setMessage({ type: 'error', text: 'Failed to generate Challan No' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleItemChange = (index, field, value) => {
-    const updated = [...items];
-    updated[index][field] = value;
-    setItems(updated);
+  const fetchDropdownData = async () => {
+    try {
+      const [vehiclesRes, orderItemsRes] = await Promise.all([
+        api.get('/vehicles'),
+        api.get('/orderItems')
+      ]);
+      console.log('Vehicles:', vehiclesRes.data);
+      console.log('Order Items2:', orderItemsRes.data);
+      setVehicles(vehiclesRes.data.data);
+      setOrderItems(orderItemsRes.data);
+    } catch (error) {
+      console.error('Error fetching dropdown data:', error);
+      setMessage({ type: 'error', text: 'Failed to load dropdown data' });
+    }
   };
 
-  const handleAddItems = (newItems) => {
-    console.log("New Items:", newItems);
-    const updatedItems = newItems.map((item) => ({
-      ...item,
-      deliveredQuantity: item.quantity || 0,
-    }));
-    setItems((prev) => [...prev, ...updatedItems]);
-    setShowAddItemPopup(false);
-  };
+  fetchChallanNo();
+  fetchDropdownData();
+}, []);
+
+
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    // Check if all required fields are filled
-    if (!vehicleId || !challanDate || items.length === 0) {
-      setError(true);
-      setMessage("Please fill all required fields and add at least one item.");
-      return;
-    }
-  
-    // Log the items array to check if departmentOrderId is present
-    console.log("Items array:", items);
-  
-    // Extract departmentOrderId (assuming it's consistent in all items)
-    const departmentOrderId = items[0]?.departmentOrderId;
-    console.log("Department Order ID:", departmentOrderId);
-  
-    // Format the items to ensure all data is structured correctly
-    const formattedItems = items.map((item) => ({
-      farmer: item.farmerId || item.farmer,
-      deliveredQuantity: Number(item.deliveredQuantity),
-      deliveryStatus: item.deliveryStatus || "Delivered",
-      deliveredAt: new Date().toISOString(),
-      returnReason: item.returnReason || "",
-      plants: [
-        {
-          plantType: item.plantType,
-          quantity: Number(item.quantity),  // NOT deliveredQuantity
-          amount: Number(item.amount),
-        },
-      ],
-    }));
-  
-    console.log("Sending payload:", {
-      vehicleId,
-      challanDate,
-      items: formattedItems,
+  e.preventDefault();
+  setIsLoading(true);
+  setErrorMessage('');
+
+  try {
+ const response = await api.post('/challans', form);
+    console.log('Challan created successfully:', response.data);
+    // Navigate first before resetting the form (avoids unnecessary re-renders)
+    navigate('/challans', {
+      state: { success: 'Challan created successfully' }
     });
-  
-    try {
-      // Make the POST request to create the challan
-      await api.post("/challans/create", {
-        vehicleId,
-        challanDate,
-        items: formattedItems,
-      });
-  
-      // Handle successful submission
-      setError(false);
-      setMessage("Challan created successfully.");
-      setVehicleId("");
-      setChallanDate("");
-      setItems([]);
-    } catch (err) {
-      // Handle any errors
-      console.error(err);
-      setError(true);
-      setMessage("Error creating challan.");
-    }
-  };
+
+    // Optional: If staying on the same page (e.g., with a modal), reset here
+    setForm({
+      challanNo: '',
+      vehicleId: '',
+      dispatchDate: '',
+      notes: '',
+      items: []
+    });
+  } catch (error) {
+    console.error('Challan creation failed:', error);
+    setErrorMessage(
+      error.response?.data?.message || 'Error creating challan'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
+     
+      {/* Sidebar */}
       <div className="w-52 h-full p-4">
         <h3 className="text-lg font-bold mb-4">Order Status</h3>
         <ul className="space-y-2">
-          <li className="cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center">
-            <FiPlus />
-            Add Challan
+          <li>
+            <Link to="/add-challan" className="cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center hover:bg-blue-100">
+              <FiPlus />
+              Add Challan
+            </Link>
           </li>
-          <li className="cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center bg-blue-500 text-white">
-            <FiTruck /> Challans
+          <li>
+            <Link to="/challans" className="cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center bg-blue-500 text-white">
+              <FiTruck />
+              Challans
+            </Link>
           </li>
         </ul>
       </div>
-
-      <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl">
-        <h2 className="text-3xl font-bold mb-4">Create Challan</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="flex mb-4 gap-10">
-            <div className="flex flex-col w-full">
-              <label className="pb-2 font-semibold">Vehicle</label>
-              <select
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                className="border border-gray-300 p-2 mb-4 rounded-lg"
-              >
-                <option value="">Select Vehicle</option>
-                {vehicles.map((v) => (
-                  <option key={v._id} value={v._id}>
-                    {v.transportName} - {v.vehicleNumber}
-                  </option>
-                ))}
-              </select>
+      <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
+        {
+<StatusMessageWrapper
+  loading={isLoading}
+  success={message.type === 'success' ? message.text : ''}
+  error={message.type === 'error' ? message.text : ''}
+/>        }
+        <h2 className="text-3xl font-bold mb-4">Challan Details</h2>
+        <form onSubmit={handleSubmit} className="w-full">
+          <div className="flex gap-10 justify-between ">
+            <div className="mb-2 w-full">
+              <InputText label={'Challan No'} type="text" value={form.challanNo} handleOnChange={e => setForm({ ...form, challanNo: e.target.value })} className="input" required />
             </div>
-
-            <div className="flex flex-col w-full">
-              <label className="pb-2 font-semibold">Challan Date</label>
-              <input
-                type="date"
-                className="border border-gray-300 p-2 mb-4 rounded-lg"
-                value={challanDate}
-                onChange={(e) => setChallanDate(e.target.value)}
+            <div className="w-full">
+              <SelectDropdown
+                label="Vehicle"
+                value={form.vehicleId}
+                onChange={e => setForm({ ...form, vehicleId: e.target.value })}
+                options={vehicles}
+                optionLabel={v => `${v.vehicleNumber} - ${v.driverName}`} // Optional if dynamic
+                optionValue="_id"
+                placeholder="Select Vehicle"
+                required
               />
             </div>
           </div>
+          <div className="flex gap-10 justify-between ">
 
-          <button
-            type="button"
-            onClick={() => setShowAddItemPopup(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            + Add Item
-          </button>
+            <div className=" w-full">
+              <InputText type="date" label={'Dispatch Date'} value={form.dispatchDate} handleOnChange={e => setForm({ ...form, dispatchDate: e.target.value })} />
+            </div>
+            <InputText type="text" label={'Route Details'} value={form.routeDetails} handleOnChange={e => setForm({ ...form, routeDetails: e.target.value })} />
+          </div>
+          <div className="mt-4">
+            <div className='flex justify-between pb-4'><h4 className="font-semibold">Items</h4>
+              {/* <button type="button"
+                onClick={() => setShowSelector(!showSelector)} className='flex gap-3 items-center border border-gray-300 px-4 py-1 rounded-md focus:outline-blue-50 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-500 cursor-pointer'  ><FiPlus />Add Items</button> */}
+            </div>
+            <ul className="space-y-2 mt-2">
+              {form.items.map((item, idx) => {
+                const orderItem = orderItems.find(oi => oi._id === item.orderItemId);
 
-          {showAddItemPopup && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white max-h-[90vh] overflow-y-auto w-full max-w-3xl rounded-lg shadow-lg p-6 relative">
-                <button
-                  className="absolute top-3 right-3 text-gray-600 hover:text-black"
-                  onClick={() => setShowAddItemPopup(false)}
-                >
-                  ✕
+                if (!orderItem) return null;
+
+                return (
+                  <li key={idx} className="border border-gray-300 p-2 rounded-lg flex gap-5 text-lg font-semibold items-center justify-between">
+                   <div className='flex gap-8 items-center'>
+                    <div className=" w-6 h-6 bg-blue-50 border border-blue-300 font-semibold flex justify-center items-center text-blue-700 rounded-full">{idx + 1}</div>
+                    <div className='flex items-center gap-2 min-w-44'> <FiUser /> {orderItem.farmerId?.name}</div>
+                    <div className='flex items-center gap-2'> <FiCalendar /> {new Date(orderItem.orderId.orderDate).toLocaleDateString()}</div>
+                    <div className='flex items-center gap-2 min-w-30'> <RiPlantLine />{orderItem.plantTypeId?.name}</div>
+                    <div className='flex items-center gap-2'> <FiBox />{item.quantity}</div>
+                   </div>
+          <IconButton icon={<FiX />} shape='pill' label=''  onClick={() => {
+            setForm(prev => ({
+              ...prev,
+              items: prev.items.filter((_, i) => i !== idx)
+            }));
+          }} className="btn btn-sm" />
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="flex gap-3 mt-4 justify-end">
+              <IconButton onClick={() => setShowSelector(!showSelector)} icon={<FiPlus />} className="btn btn-sm" />
+
+            </div>
+          </div>
+          <div className="mb-2 flex flex-col gap-1">
+            <label className='w-full'>Notes:</label>
+            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="border rounded-md border-gray-400 px-3 py-2 focus:border-blue-300 focus:outline-0 w-full" />
+          </div>
+
+          {showSelector && (
+            <div className="w-screen h-screen fixed top-0 left-0 bg-black/50 z-50 flex justify-center items-center">
+              <div className="mb-2 p-10 bg-white rounded-2xl w-6xl relative">
+                <button type="button" onClick={() => setShowSelector(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                  <FiX size={24} />
                 </button>
-                <AddItemFromOrders onAddItems={handleAddItems} />
+                <OrderItemSelector
+                  orderItems={orderItems}
+                  onItemsSelected={(items) => {
+                    setForm(prev => ({
+                      ...prev,
+                      items: [...prev.items, ...items]
+                    }));
+                    setShowSelector(false);
+                  }}
+                />
               </div>
             </div>
           )}
 
-          <h3 className="mt-6 font-semibold text-lg">Items</h3>
-          {items.map((item, index) => (
-            <div key={index} className="flex gap-4 border border-gray-300 rounded-xl p-4 mb-2 flex-wrap items-center">
-              <div className="font-bold">{index + 1}.</div>
-              <div>{item.farmerName || item.farmer}</div>
-              <div>{item.plantType}</div>
-              <div>Qty: {item.quantity}</div>
-              <div>Amount: ₹{item.amount}</div>
-              <div>{item.itemReferenceNumber || "N/A"}</div>
-              <div>
-                <label className="text-sm block">Delivered Qty</label>
-                <input
-                  type="number"
-                  className="border border-gray-300 p-2 rounded-lg w-24"
-                  value={item.deliveredQuantity}
-                  onChange={(e) => handleItemChange(index, "deliveredQuantity", e.target.value)}
-                  min={0}
-                  max={item.quantity}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => handleRemoveItem(index)}
-                className="text-red-600 font-semibold hover:underline ml-auto"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+          <div className="flex pt-5 justify-center">
 
-          <Button type="submit" className="mt-4">
-            Submit Challan
-          </Button>
+            <Button type="submit" className="btn btn-primary w-sm ">Create Challan</Button>
+          </div>
         </form>
-
-        {message && (
-          <p className={`mt-4 font-semibold ${error ? "text-red-600" : "text-green-600"}`}>
-            {message}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -14,6 +14,9 @@ import masterRoutes from "./routes/master.routes.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
 import challanRoutes from "./routes/challan.routes.js";
+import orderItemsRoutes from "./routes/orderItems.routes.js";
+import vehicleRoutes from "./routes/vehicle.routes.js";
+import utilityRoutes from "./routes/utility.routes.js";
 dotenv.config();
 
 const app = express();
@@ -45,9 +48,12 @@ app.use('/api', signedUrlRouter);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/farmers", farmerRoutes);
 app.use("/api/plants", plantRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/master", masterRoutes);
+app.use("/api/orders", orderRoutes); 
+app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/challans", challanRoutes);
+app.use("/api/orderItems", orderItemsRoutes);
+app.use("/api/utility", utilityRoutes);
+
 
 
 const PORT = process.env.PORT || 3000;

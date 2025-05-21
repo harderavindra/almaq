@@ -1,17 +1,13 @@
-import express from "express";
-import PlantType from "../models/plant.model.js";
+import express from 'express';
+import { createPlantType, deletePlantType, getPlantTypeById, getPlantTypes, updatePlantType } from '../controllers/plantType.controller.js';
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
-    console.log(req.body);
-  const plantTypes = await PlantType.create(req.body);
-  res.status(201).json(plantTypes);
-});
 
-router.get("/", async (req, res) => {
-  const plantTypes = await PlantType.find();
-  res.json(plantTypes);
-});
+router.get('/', getPlantTypes);
+router.get('/:id', getPlantTypeById);
+router.post('/', createPlantType);
+router.put('/:id', updatePlantType);
+router.delete('/:id', deletePlantType);
 
-export default router; 
+export default router;

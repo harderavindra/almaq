@@ -6,12 +6,15 @@ import OrderSidebar from '../components/layout/OrderSidebar';
 const OrderViewPage = () => {
     const { id } = useParams();
     const [order, setOrder] = useState(null);
+    const [items, setItems] = useState([]);
 
     useEffect(() => {
         const fetchOrder = async () => {
             try {
                 const res = await api.get(`/orders/${id}`);
-                setOrder(res.data);
+                console.log('Order fetched:', res.data);
+                setOrder(res.data.order);
+                setItems(res.data.items);
             } catch (err) {
                 console.error('Failed to fetch order', err);
             }
@@ -42,7 +45,7 @@ const OrderViewPage = () => {
                     <div className="flex gap-6 justify-between">
                         <div className="flex flex-col gap-1">
                             <label>Department:</label>
-                            <p className="text-lg text-blue-700 font-medium">{order.department?.name}</p>
+                            <p className="text-lg text-blue-700 font-medium">{order.departmentId?.name}</p>
                         </div>
                         <div className="flex flex-col gap-1">
                             <label>Status</label>
@@ -61,8 +64,8 @@ const OrderViewPage = () => {
                     </div>
                     <div className="flex gap-6 justify-between">
                         <div className="flex flex-col gap-1">
-                            <label>Order Letter Number</label>
-                            <p className="text-lg text-blue-700 font-medium">{order?.orderLetterNumber}</p>
+                            <label>Order Ref No</label>
+                            <p className="text-lg text-blue-700 font-medium">{order?.orderRefNo}</p>
                         </div>
                         <div className="flex flex-col gap-1">
                             <label>Order Date</label>
@@ -70,42 +73,86 @@ const OrderViewPage = () => {
                         </div>
                         <div className="flex flex-col gap-1">
                             <label>Contact Person</label>
-                            <p className="text-lg text-blue-700 font-medium capitalize">{order?.contactPerson}</p>
+                            <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactPerson}</p>
                         </div>
                         <div className="flex flex-col gap-1">
                             <label>Contact Number</label>
-                            <p className="text-lg text-blue-700 font-medium capitalize">{order?.contactNumber}</p>
+                            <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactNumber}</p>
                         </div>
                     </div>
                 </div>
+                <h3 className="text-lg font-semibold mb-2">Items with Challans</h3>
+<table className="w-full rounded-xl overflow-hidden" border="0">
+  <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
+    <tr>
+      <th className="px-3 py-3 font-semibold text-left">Farmer</th>
+      <th className="px-3 py-3 font-semibold text-left">Plant</th>
+      <th className="px-3 py-3 font-semibold text-left">Qty</th>
+      <th className="px-3 py-3 font-semibold text-left">Price Per Unit</th>
+      <th className="px-3 py-3 font-semibold text-left">Price</th>
+      <th className="px-3 py-3 font-semibold text-left">Delivered</th>
+      <th className="px-3 py-3 font-semibold text-left">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+  {items.filter(item => !item.challanIds || item.challanIds.length === 0).map(item => (
+    
+    <tr key={item._id} className="even:bg-gray-100/70">
+        <td className="px-3 py-4">{item.farmerId?.name}</td>
+        <td className="px-3 py-4">{item.plantTypeId.name}</td>
+        <td className="px-3 py-4">{item.quantity}</td>
+        <td className="px-3 py-4">{item.pricePerUnit}</td>
+        <td className="px-3 py-4">{item.quantity * item.pricePerUnit}</td>
+        <td className="px-3 py-4">{item.deliveredQuantity}</td>
+        <td className="px-3 py-4">{item.status}</td>
+      </tr>
+    ))}
+  </tbody>
+  </table>
 
-                <h3 className="text-lg font-semibold mb-2">Items</h3>
-                <table className="w-full rounded-xl overflow-hidden" border="0">
-                    <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
-                        <tr>
-                            <th className="px-3 py-3 font-semibold text-left">Farmer</th>
-                            <th className="px-3 py-3 font-semibold text-left">Plant</th>
-                            <th className="px-3 py-3 font-semibold text-left">Qty</th>
-                            <th className="px-3 py-3 font-semibold text-left">Amount</th>
-                            <th className="px-3 py-3 font-semibold text-left">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {order.items.map((item, i) => (
-                            item.plants.map((plant, j) => (
-                                <tr key={`${i}-${j}`} className="even:bg-gray-100/70">
-                                    {j === 0 ? (
-                                        <td rowSpan={item.plants.length} className="px-3 py-4">{item.farmer?.name}</td>
-                                    ) : null}
-                                    <td className="px-3 py-4">{plant?.name}</td>
-                                    <td className="px-3 py-4">{plant?.quantity}</td>
-                                    <td className="px-3 py-4">{plant?.amount}</td>
-                                    <td className="px-3 py-4">{plant?.status}</td>
-                                </tr>
-                            ))
-                        ))}
-                    </tbody>
-                </table>
+                <h3 className="text-lg font-semibold mb-2">Items with Challans</h3>
+<table className="w-full rounded-xl overflow-hidden" border="0">
+  <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
+    <tr>
+      <th className="px-3 py-3 font-semibold text-left">Farmer</th>
+      <th className="px-3 py-3 font-semibold text-left">Plant</th>
+      <th className="px-3 py-3 font-semibold text-left">Qty</th>
+      <th className="px-3 py-3 font-semibold text-left">Price Per Unit</th>
+      <th className="px-3 py-3 font-semibold text-left">Price</th>
+      <th className="px-3 py-3 font-semibold text-left">Delivered</th>
+      <th className="px-3 py-3 font-semibold text-left">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {items.filter(item => item.challanIds.length > 0).map(item => (
+      <React.Fragment key={item._id}>
+        <tr className="even:bg-gray-100/70">
+          <td className="px-3 py-4">{item.farmerId?.name}</td>
+          <td className="px-3 py-4">{item.plantTypeId.name}</td>
+          <td className="px-3 py-4">{item.quantity}</td>
+          <td className="px-3 py-4">{item.pricePerUnit}</td>
+          <td className="px-3 py-4">{item.quantity * item.pricePerUnit}</td>
+          <td className="px-3 py-4">{item.deliveredQuantity}</td>
+          <td className="px-3 py-4">{item.status}</td>
+        </tr>
+        <tr className="bg-gray-50">
+          <td colSpan={7} className="px-4 pb-4 pt-1">
+            <div className="ml-2 mt-1 text-sm text-gray-600">
+              <strong>Challans:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {item.challanIds.map(challan => (
+                  <li key={challan._id}>
+                    <span className="font-medium">#{challan.challanNo}</span> – Vehicle: <span className="font-medium">{challan.vehicleId?.vehicleNumber}</span>, Driver: {challan.vehicleId?.driverName}, Date: {new Date(challan.deliveryDate).toLocaleDateString()}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </td>
+        </tr>
+      </React.Fragment>
+    ))}
+  </tbody>
+</table>
 
                 <Link to="/orders" className="inline-block mt-4 text-blue-600 underline">← Back to Order List</Link>
             </div>

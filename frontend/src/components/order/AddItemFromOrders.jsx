@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 import Pagination from "../Pagination";
 
-const AddItemFromOrders = ({ onAddItems }) => {
+const AddItemFromOrders = ({onClose, onAddItems }) => {
   const [orders, setOrders] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,76 +10,64 @@ const AddItemFromOrders = ({ onAddItems }) => {
   const itemsPerPage = 5;
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchOrders = async () => {
+  const fetchOrdersWithItems = async () => {
     try {
-      const res = await api.get("/orders/getOrders", {
+      const res = await api.get("/orders/with-items", {
         params: {
           search: searchTerm,
           page: currentPage,
           limit: itemsPerPage,
         },
       });
-      console.log("Fetched Orders:", res.data);
       setOrders(res.data.orders || []);
-      setTotalCount(res.data.total || 0);
+      setTotalCount(res.data.totalOrders || 0);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching orders with items:", error);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrdersWithItems();
   }, [searchTerm, currentPage]);
 
-  const toggleItem = (orderId, item, plant) => {
-    const refKey = `${orderId}-${item._id}-${plant._id}`;
-    const exists = selectedItems.some((i) => i._refKey === refKey);
+  const toggleItem = (orderItem) => {
+    const exists = selectedItems.some((i) => i._id === orderItem._id);
     if (exists) {
-      setSelectedItems((prev) => prev.filter((i) => i._refKey !== refKey));
+      setSelectedItems((prev) => prev.filter((i) => i._id !== orderItem._id));
     } else {
       setSelectedItems((prev) => [
         ...prev,
         {
-          ...plant,
-          _refKey: refKey,
-          deliveredQuantity: plant.quantity || 0,
+          ...orderItem,
+          deliveredQuantity: orderItem.quantity,
           deliveryStatus: "Delivered",
           deliveredAt: new Date().toISOString(),
           returnReason: "",
-          orderId,
-          itemId: item._id,
-          farmer: item.farmer?._id || item.farmer, // ✅ FIXED
         },
       ]);
     }
   };
 
   const handleAddItems = () => {
+    console.log("Selected items to add:", selectedItems); 
     const groupedByFarmer = {};
 
     selectedItems.forEach((item) => {
-      const {
-        farmer,
-        plantType,
-        quantity,
-        amount,
-        deliveredQuantity,
-        deliveryStatus,
-        deliveredAt,
-        returnReason,
-      } = item;
+      const { farmerId, plantTypeId, quantity, pricePerUnit, deliveredQuantity, deliveryStatus, deliveredAt, returnReason } = item;
 
-      if (!groupedByFarmer[farmer]) {
-        groupedByFarmer[farmer] = {
-          farmer,
+      const farmerKey = farmerId?._id || farmerId;
+
+      if (!groupedByFarmer[farmerKey]) {
+        groupedByFarmer[farmerKey] = {
+          farmer: farmerId,
           plants: [],
         };
       }
 
-      groupedByFarmer[farmer].plants.push({
-        plantType,
+      groupedByFarmer[farmerKey].plants.push({
+        plantType: plantTypeId,
         quantity,
-        amount,
+        amount: pricePerUnit,
         deliveredQuantity,
         deliveryStatus,
         deliveredAt,
@@ -95,13 +83,20 @@ const AddItemFromOrders = ({ onAddItems }) => {
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
-    <div className="mb-8">
+    <div className="fixed max-h-full p-10 overflow-scroll inset-0 bg-black bg-opacity-40 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl relative mx-auto">
+      <button
+        onClick={onClose}
+        className=" top-2 right-2 text-gray-600 hover:text-red-600 text-lg"
+      >
+        &times;
+      </button>
       <h3 className="text-lg font-semibold mb-4">Select Plants from Orders</h3>
 
       <div className="relative mb-4">
         <input
           type="text"
-          placeholder="Search by farmer name or order letter"
+          placeholder="Search by order ref no"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -123,67 +118,37 @@ const AddItemFromOrders = ({ onAddItems }) => {
         <p className="text-gray-500">No matching orders found.</p>
       ) : (
         orders.map((order) => (
-          <div
-            key={order._id}
-            className="border border-gray-300 p-4 rounded mb-4"
-          >
+          <div key={order._id} className="border border-gray-300 p-4 rounded mb-4">
             <strong className="block mb-2">
-              Order #{order.orderLetterNumber} | Department:{" "}
-              {order.department?.name || "N/A"} | Date:{" "}
-              {new Date(order.orderDate).toLocaleDateString()}
+              Order #{order.orderRefNo} | Department: {order.departmentId?.name || "N/A"} | Date:{" "}
+              {new Date(order.date).toLocaleDateString()}
             </strong>
 
-            {order.items && order.items.length > 0 ? (
-              order.items.map((item) => (
-                <div key={item._id} className="ml-4 mb-2">
-                  <div className="font-medium text-gray-700 mb-1">
-                    Farmer: {item.farmerName || "N/A"} | Ref:{" "}
-                    {item.itemReferenceNumber}
-                  </div>
-
-                  <ul className="ml-4 space-y-1">
-                    {item.plants && item.plants.length > 0 ? (
-                      item.plants.map((plant) => {
-                        const refKey = `${order._id}-${item._id}-${plant._id}`;
-                        const checked = selectedItems.some(
-                          (i) => i._refKey === refKey
-                        );
-                        return (
-                          <li key={refKey}>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() =>
-                                  toggleItem(order._id, item, plant)
-                                }
-                              />
-                              {plant.plantType?.name || "Plant"} - Qty:{" "}
-                              {plant.quantity} - ₹{plant.amount}
-                            </label>
-                          </li>
-                        );
-                      })
-                    ) : (
-                      <li className="text-sm text-gray-400">
-                        No plants in this item.
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              ))
+            {order.items?.length === 0 ? (
+              <p className="text-sm text-gray-400">No items for this order.</p>
             ) : (
-              <p className="text-sm text-gray-400">No items in this order.</p>
+              order.items.map((item) => {
+                const checked = selectedItems.some((i) => i._id === item._id);
+                return (
+                  <div key={item._id} className="ml-4 mb-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleItem(item)}
+                      />
+                      Farmer: {item.farmerId?.name || "N/A"} - {item.plantTypeId?.name || "Plant"} - Qty:{" "}
+                      {item.quantity} - ₹{item.pricePerUnit}
+                    </label>
+                  </div>
+                );
+              })
             )}
           </div>
         ))
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <button
         type="button"
@@ -192,10 +157,9 @@ const AddItemFromOrders = ({ onAddItems }) => {
         disabled={selectedItems.length === 0}
       >
         + Add{" "}
-        {selectedItems.length > 0
-          ? `${selectedItems.length} Selected Plant(s)`
-          : "Selected Plants"}
+        {selectedItems.length > 0 ? `${selectedItems.length} Selected Plant(s)` : "Selected Plants"}
       </button>
+    </div>
     </div>
   );
 };

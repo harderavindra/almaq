@@ -1,688 +1,326 @@
-import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
+// DeliveredChallanReport.jsx
+import React, { useEffect, useState, useMemo } from 'react';
+import axios from '../api/axios';          // ← adjust if your axios instance lives elsewhere
 import html2pdf from 'html2pdf.js';
+import { FiCalendar, FiFileText, FiPaperclip, FiTruck, FiUser } from 'react-icons/fi';
+
+/**
+ * One-liner util to format ISO -> DD-MMM-YYYY
+ */
+const fmtDate = iso =>
+  iso ? new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const DeliveredChalanPage = () => {
-  const [farmers, setFarmers] = useState([]);
-  const [selected, setSelected] = useState([]);
-
+  const [rows, setRows] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selected, setSel] = useState(new Set());
+  const [loading, setLoading] = useState(false);
+  const group = rows?.[0];
   useEffect(() => {
-    axios.get('/orders/delivered-farmers').then(res => {
-      setFarmers(res.data.farmers);
-    });
+    (async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get('/challans/fully-delivered');
+        setRows(data.items || []);
+        console.log('Delivered items:', data.items);
+      } catch (err) {
+        console.error('Load error:', err);
+        alert('Failed to load delivered items');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const handleToggle = (itemId) => {
-    setSelected(prev =>
-      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+  const filtered = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter(
+      r =>
+        r.farmerName.toLowerCase().includes(q) ||
+        r.challanNo.toLowerCase().includes(q)
     );
-  };
+  }, [rows, search]);
 
-  const handleDownload = () => {
-    selected.forEach((id) => {
-      const data = farmers.find(f => f.itemId === id);
-      const content = `
-      <div >
-     <table
-      cellpadding="0"
-      cellspacing="0"
-      border="0"
-      style="
-        padding: 10px;
-        font-family: Helvetica Neue, sans-serif;
-        width: 100%;
-        font-size: 11px;
-      "
-    >
-      <tbody>
-        <tr>
-          <td style="padding: 10px; text-align: center">
-            Tax Invoice <span style="float: right">ORIGINAL FOR RECIPIENT</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="vertical-align: top; border: 1px solid #000">
-            <table cellpadding="20px" cellspacing="0" width="100%">
-              <tbody>
-                <tr>
-                  <td style="vertical-align: top; width:40%; font-size: 10px; padding:10px" >
-                    <img
-                      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYIAAACCCAMAAAB8Uz8PAAAA+VBMVEX///9ChfTqQzX7vAU0qFM6gfTn9OoZokIeo0XP6NU9g/T7uQD7uACIr/c2f/RqnPaux/rqPi/pNCLpOirpLhore/PpMyHpOyxnunv5+/9TjvXU4fzJ2vuXuPjh6/34y8jrSDr2trK3zfr61tP97ezB1PtIifSgvvlglvXw9f7wh4Dyk43+9fSRtPiqxPnzn5n+6bz3wr/1rantYFX//vnveHD73Nrd6P13pPfwhX3znJf5z8x/qffsVUn803T85ePubGL/+er93JT+8dX+7MX8zFv8yUz7xDTrT0L81Hj94aP92o7venL+6r/81Hb8zmToIwb8xTwAmysgNTKGAAARxklEQVR4nO1daVviShZudHLvTIBANhjWBpodRcENVBTbdm3vdfr+/x8zQFjqnFoDRPvRvB8VQlW9derslS9f/CBTPMtNcFZs+fpaiG2gWGsMsobrGjO4rhtpxpO5zHsP67OgVbusu4am6RESujbholnIvffoPj5alYRhwMUHPLj1/bP3HuOHRu5S46//HJrbrLz3ON8Qf/yXxH8C/rVaU7r+niwYkW7AQ/l98Mef/1rhz2ApyGfVCJjBiHwWSQAU/DtICooJV52AGQnZz6ET3oyCgqv5ImB6HLn7wY3n98EbUXBWN/wS4AlCMagR/T54GwoaPs+glSAYH18jvAUFmcRaIuDBjQcypt8Ib0BBse5bC5AwEkEM6jdC8BTkNN4hpGnT2JBer0+cMZfvMRvZjx3DC5yCPOcQ0lxt0KidzVc3U8x3Z3Ejxid142Pr5KApyLvs9a83GEZ/qzJwKcZ07WMzEDQFTAY0I851ujLdCDyRPjwDAVNwxjiFNK0hzgrUSB9C1z86A8FS0NIpFasb+/K0TFJf6AQ98uEZCJaCLKVdjaZS3Kc1cD8NA4FScEkx4BZUv1uZaoRPwUCQFFSwKta1vPq3Jw7d52AgQApamAHN34pmmh/eFvIQHAVNdAxpWb/lEZ+DgeAoqCB7VKuHBSpsBEVBBpmjev1jB3o2QFAUFPAx9ElOlTUQEAUtdAy5tW09+eMhIArikALjw+ddNkAwFLTgMaRnt/TcD4lgKGhACtywTlSAYCioQyEYbOmxHxOBUFCDmsAN7VERAqFgAM4hLdTFQgRBQQYJQegSCBEEBfAc0t5UE+x96/U77WG7c1D+Wl3zGce3h9+frl5fr34+H94cr/WITLHWLcTj8UIyLz2FfVCwdzqb3bB9Xr4Qzu4SBCcMHxHqzbDXa49SKcu20xPYVsopnfSvfT7j+PDvh2gsukAstnv//dbnM4rJhO4ahjbBtIcrGxevgCoFpwfjtEPMbtS54H4W9S/5nMC66J1YqbS5A2BazqjvQxh+vO7GorsI0djuzxv1Z9SaBqzFmTYOdb0YZS1BoDH/ghIFe/2RY8PZmWmndM6eXBEkCt5IGfdLKbT8SxasoaIoPD/Q6z9nIXqnKArJOrMkzdBntbFJV19iGTFQoGDv3LaY07Otzh7j8zBM/SbnUHnHYq6/h7TTZo0T4XA3xl7/uSjcKUhCnl9AbjQnSiFJ/FtTp6Bv2dzJ2XaZ/kIciKEbfJrg+iglIMDbLIxxAtzciwjwSPgueUZmICog17TcehRUJdNzTqivNMlx6E2lVdwEZYd9BKFxCgXhMMo5gkjEHoSCkNMl5cturrIGBT3p9OwSPmnf2C8bOnICmOMk8CQTgYUk/OA/g6pWoKEniN2pSMGBwvRM+xv4TgYMxUiuta7qOBJpATBOi2vD3SkyMBGEQ94zGnIGplU5finoqG2wFOAAGkRBa+NRWpGBCZyv7GfcKxxCSw6e2c9QYgBAiQJFBiYcnBLfygGjQCU6MUioowmdzSMfDEw4+Mb6+TsfDPDkoOubASUK+qoM7JgmoetgQ4FKlDSr6cqAqYcTprFmTtxHtgqzGJ7MFZuBKE9Bxxj6oMZkQNc1gYZWoOCCxcDEM7Ysm5qfeUQMB7oFCjZp1kcvIGj/O6ettYk/bI+H7eFJyUnREmI+Uj/+zNAD0Vj04fXq6m43xvTVKLuoSHsDuuFqzcv45YDTt6JCwR6t5tKO/XJQ7pXPTyzsilqd5RehZ6ZvmQKNuBiB3iRp56i8MHz2vg4dSkjsIfrtG5qB2O7zwhU+/vFEC0P0XjoB3a0nF/XLrVqC2XItp2CM99DEx1wdpRcnyFp1luogYAqIwuASjgg5L8jw7Nt4FlglP1AE3KOD5nkXk4BVcgELgdGEmdrigHFQSSnoOXh6yMk/hdbgSsQhBdq2KVj5GedITu1H2urce0FnlVmC64uEILpLa9vjv7GkRMFRVETry+qVztNKQUoB2mHpEm1MtMESWP35n4PVBdrl4ltVtLgW7adPUcYf6xP/PMZr+4vp/x4iOYhekf9NoHKROssIbOESWykFZbjD7DHLvW+Do3ZhFa1hEfmhYJkAasMzxmpznv4VywExlZ9wbaN3nGfc4qOIYCoHhYBXvZxpolnKKChBBtgb7MuIFBXrwPsj7C8zFOpX1qIACYH9wn38V3imEmKAhCD6i/uMW8TV0+pfUAh0bvVypg6nKaGgB+ZHmpwAp1BWvD8i71ihknEtCg6gCI4Ez+/D2awM02d0wAiSlIdQH8SWH0WaQNAjjXofJRSMgSawOUHGixPwsdQ8IAwzNg32d0n4oUBf6AJ4ujjCrAycjrPU2r/gsgpicF++vAK6okujaB8IgTAk1oCGipCCqsVaWog9Kk+1EBb2rhXAlxTMryj6Bk6XxSHIQRV8OL3QGtAniL4Kn3EDBWZ5ZkETXByahzMRUgCUMfMYOh06tOs29w1gFVFdOKgZ6oYQMPg9l6oOPIckv9BmfhqeQzFJVuw789NQGUsqN8mMjYQCcMCk6PhieeSwwmPz7QULShXidJWkGOTzFpL+SA7RFgsBFoOFG3nvQwiw7l5E60AfhSw/lVGnANhDeIdddyx2Ktm0rNkHoFW6ecIA9CrM1fseXFNpkQTQBnObCK2pND8PtEH0p/dHYGpK768ic7pCCq7J+dkd8JDemA68eCLgjPqe2oatlvrG1wkBSl0v9HJBGjnmWPoMcLSmvUARCg9Jn/EDfP5h9jdYOKjJnKC8auKyR443RXj91QNeqYhtvazcZ6heNy7q7Wr0LPvkEKXnENpVc+0GfF7o8DJxE6UpA4amPE9OZhSFFPTJfe4sLdKLlxRbAMxU6YA8CmCfmbHppa9Avc+1O9DGDG1FAZyt3oEJtHGUkw0jAUJ6XpwIRGM0+d0CRNW/kALg+tve56bVXOwMle2M0RIgl13BJhICJFznNi4wGOSqACkDb1s9kRTIVQFSBt4XukBPya8yJLaTkAJyfp7bedrmVHNNVHCH9opgh4e7WfoYJEIXNukRORpToVALbCvPkYMrqlCoBcxSz5EDAq8QjCkoUkDumKmq6x1xBGCignuSH4ps3GkGovGLWQKbtKTwlHNwuM6s0jtgEClUUIOTy7NKQdmagv3dUKSA3GLm0UGKJwCp9in7h85Q3GQjMQAitUg/gKOdzkbSACElr9wAuAUxhWdA5UFToHCHHuGcCSkAAVCTY4OmHvt8+YeBWX0TbQBM0qWF+0iOpaTwmN9ECrprSAEbtnXCr23/QjWbGQqxOh4SwPdZ+Hlgl+yspwvutqALQJDOlV93tc5BxAC2QVlAkbf1r7lEMZjFc8Z+LaIT2iK68msRMUwoEIxRCMzH17CIaAFwxkwVDIHuYVlfI3NqhMGmTjErtCCA2DizP32nj3YxQGzb8wvAPDW5B0TItJCCIbdEzbTSDBuUBSwGa1b3ol6FpeENtCtIB7MBY0qe/obe8ZPkCVSObaY8oMUsD8yrBigOOA0F0yodhWN3Blxf5q4VrUO3iRjLf4CEsMnJqxIAMRfTS3Le+owR3TJiRHCAUrOjqBqg6DGLlS1nyLFBmcAVA2vdxQJliQgAwOizJd0YL8Dh92JKfiOlT6yYEgyHyXyzrmqktEqXMk5UsMAGZQFX16zjJKPyEDLgB9SVtIdmD2SPF5FHeLb/lI0GMLaIKV0y69V5yCr3F8D6icm2SYltUCYauMbMtxwgBhY5yxmAPhYm76eAR6s1/yssYYlKPAOYwF8YsRU/0Wpg3okpQPr4UWqDMkGlhF1fMdMMdb8gWR4CazxSYiNtD+YtF6oDHu4yMYDK+GH+V5gcAbuEBthTYgrg/CwFm48FfDPXhINL+bcWoF48gdJvSF8JnwVTxyu+4KpGhd4ZTB1Hl61/wHUUO0A5HxUUaNfwyog8HHR4/6Gr7rW66nuyKrh9F+dDYDGdoJKLquVKL5UaKqbjV3JRtVwrZxoGAoQOEKzlktQRwZMoJbK7LxxrxBOTffplBEZBpQm2NaC+iffXKVxXwRir0MYmMrE3/Bo5BFx8SlQ+IgeIL+jo/mgJBd9QDSDfGr22p1XXPEFACnX2y7o8sdHV6NuuKb9ijKrreVZRFVUopwjF9or2Nk8dHD+gDxIWbBf5LrzUGTZPZDWlMExkcgNhVXP2QYtReD0DVU88HWRdTEJSp5tWGJsLicGOw5aDaxMyYJPlv7jBI8aWgxvcYgCaPNCJyXkFFdUPKKMAHZ9miW0TnS56nniCkGFWyhkG9326Z/sG67UTrMT4C4qjpF4YG4XqC4fVmU9obZnV7bi2Hblx+F5io0mbphn6ZJX2FyAxN9OsbV4miLLZgpCh32Ew+323vk/d1NOqxevMniCdWTBexXGUtIkPo9Mx7kZDOgOf8VNbB/kHt1RXMtYZlPVsdNF4a4y2PykF19hDdqgrP07h3Qgm/YkpKPN+NVC3PthP1vIT1CqNeILfGMcp2cfdG5MFJsPoe70xdXcAZd39RfWaRXd/rjb58V93jI4/RBLd7WdEGivroVXJMt/oI+01O8CBItvqEFqZNb//sRUCLYOrYWjLwlHu288EV74zel5tZzTs93q9cmdsM2qe6K5XRs9rNLb7+v358PD56Z5xPREjmsS4+0Bzs5fdSq1W2W9y3rGt0PRKJ25sp3RyUObOj2sX7vvviyaH2uSasXuPjMyGOWvMZXTm7rD773+x+lrnl3Ix/sPsv48zdpmuz/YX/8V6cgqoo3Y2v9n0mPOz+N5RzcerpjEMURC+ylxoLphGE60OhGAbTbzTVgCV7vtvyt33U9giH7qYXfdFo6447UypLCED58xn3MjXnWCAU/jItjo2pQBbpkKkJcHKwlqv29V0WQT+ml1hw2SAV3pKmf3+GVhDDtRuYlHnQCgDMxSbvgVBdy/l0YzqI//SMBIm132enEVMfcBiQBBNVXijsJb1TcGXb4pnbUqeOkRv7VOAUVdL8ryobBS7JEz5Ud3dLESjf4meUZBZHW6lppo7JlAdKdy4ZHJFHCEZUdfLhq6cXSjbMkEwnaEk53coP4xi95Jao3xEeBi5yTWvB+xIr0azHpUTCplkVkkn6EZd8iJMgOpQPMjUSJ70O/6bd0PmXAQYVyNQ04sznXtvxfX82jc0nh4J55dOse0MHnIDg+MEL9dfcxN+c5ynJ5zK41naW5Za9nD7yichtovjFmycJdhbTHMvp+EYQMEiw6ZyVWxvxCXBdoa+k5qZyoDrsUzcGbfZXacv57ptsy4gspQqz+a4eWJ5wxNv+eFZ+erqs0uXOm0ne8qz7NgU/PPnCv/wLkz+OnYYxl86ZXMu7JUi32i67vRW5/loJ67k7DXszf3a+n1RvbbpWPb8Qi5z4kU6ztjPdclT/JiysHKLp7dW//ru47rkL9OYUMJd7rHpnooUFgEjMreg0hQPUC2Pncn85sH3aRDA2WkrNBgJUMx39wfNemTKQ7Y5KHTzm9+yf907GB6V7JRljk46ZT91TyvcHP68epiu/u7u/dPzj7Wubs9144m6runZxH6FmBVZgrpWK+ppuXMy2rEtu3Q0POj5vRM9BCzEVrmdI8TWQSZyVe6oCbF1gF6J8OUm7wBQWaVya18Iv5AVSZHxiTe4T/3zodaUVVYPWIXVIbaEVkE3dE183wbrPpMQW0J+fhusuHgc9omH79vbHjLdVemNqLodvHs1fPPqFnFJ1p4xa87mANeZ+A5PhOBjAOuludUGsPY0fOXhFoFve+BwkIRF8BtflBWCwAAVrTNKSqmrxTe8nSYEBO4m0ukW8ByqXQiV8ZbRxWUJRp3MOmVqTZzECV+Dvm3QnSyG2yxU8rlcvlJoGnQWLXwN+rbRitBpWH1esczK0EpvcgzhG2e+KqRCXRwE8j6Kxze5nSkEH+zXajEZCEOkASGvWCgYMhAciuJyxjkkxfohNkKG9eosCO1NXsD9mcFqrCSgu4MwXxw4Cvx6Wc1thj7xW6DViLBYmPhpg5CAN0P+ctpBvayWndbKRgaV0CF+WxQr+4lsPaLr9XpzsF85C1XAOyEzwXuPIUSIECHeBf8HwinWqIw4kW8AAAAASUVORK5CYII="
-                      width="150px"
-                    />
-                 
-                    <p
-                      style="margin: 0 ;  font-weight: 600"
-                    >
-                      Almaq Biotech LLP<!--0-->
-                    </p>
-                    <p style="margin: 0 0 5px ">
-                      H NO 9 VITTHAL SOCIETY NANDED<br />
-                      ROAD LATUR Plant Add:-Survey No-<br />
-                      238, At Post Lodga Dist- Latur
-                    </p>
-                    <p style="margin: 0 0 5px">Phone no.: 9422610786</p>
-                    <p style="margin: 0 0 5px">Email: almaqbiotech@gmail.com</p>
-                    <p style="margin: 0 0 5px">GSTIN: 27ABOFA3356Q1ZQ</p>
-                    <p style="margin: 0 0 5px">State: 27-Maharashtra</p>
-                    <p style="margin: 0 0 5px">
-                      NCS-TCP Certified Lab: TC2023/C001
-                    </p>
-                  </td>
-                  <td
-                    style="
-                      vertical-align: top;
-                      width: 60%;
-                      padding: 0;
-                      border-left: 1px solid #000;
-                    "
-                  >
-                    <table
-                      cellspacing="0"
-                      cellpadding="0"
-                      border="0"
-                      width="100%"
-                    >
-                      <tbody>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                            width="50%"
-                          >
-                            <p style="margin: 0 ; font-size: 10px;">
-                              Invoice No.
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              ${data.department.name}
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                            width="50%"
-                          >
-                            <p style="margin: 0 ; font-size: 10px">Date</p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              07-11-2024
-                            </p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            <p style="margin: 0 ; font-size: 10px;">
-                              Place of supply
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              27-Maharashtra
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                          >
-                            <p style="margin: 0 ; font-size: 10px;">
-                              PO number
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              1579
-                            </p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            <p style="margin: 0 ; font-size: 10px;">
-                              Village
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              Gram Panchayat Yat Ka Srekada
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                          >
-                            <p style="margin: 0 ; font-size: 10px;">
-                              Work Order
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                                font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              1825009162/DP/1235109243
-                            </p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            <p style="margin: 0 ; font-size: 10px">
-                              Transport Name
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              B R Transport
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                          >
-                            <p style="margin: 0 ; font-size: 10px">
-                              Vehicle Number
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              MH 24 AB 8506
-                            </p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            <p style="margin: 0 ; font-size: 10px">
-                              Delivery Date
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              23/Sep/2024
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                          >
-                            <p style="margin: 0 ; font-size: 10px">
-                              Delivery Location
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              Gram Panchayat Karkhed<br />
-                              Taluka :- Umarked District :- Yavatmal
-                            </p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            <p style="margin: 0 ; font-size: 10px">
-                              Driver Name
-                            </p>
-                            <p
-                              style="
-                                margin: 0 ;
-                               font-size: 10px;
-                                font-weight: 600;
-                              "
-                            >
-                              Ganesh
-                            </p>
-                          </td>
-                          <td
-                            style="padding: 5px; border-bottom: 1px solid #000"
-                          ></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td
-            style="
-              vertical-align: top;
-              width: 33%;
-              padding: 20px;
-              border-left: 1px solid #000;
-              border-bottom: 1px solid #000;
-              border-right: 1px solid #000;
-            "
-          >
-            <p>Bill To</p>
-            <p style="font-weight: 600">${data.department.name}</p>
-            <p>
-              Gram Panchayat Karkhed <br />
-              Taluka :-Umarked <br />
-              District:- Yavatmal<br />
-              State: 27-Maharashtra
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="border-left: 1px solid #000; border-right: 1px solid #000">
-            <table cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tbody>
-                <tr>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    #
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Item name
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    HSN/ SAC
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Quantity
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Unit
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Price/ Unit
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                      text-align: right;
-                    "
-                  >
-                    Amount
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    #
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                  ${data.plantType.name}
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    602
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                  ${data.quantity}
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Nos
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    ₹ 40.00
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                      text-align: right;
-                    "
-                  >
-                   ₹${data.amount}
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  ></td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    Total
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  ></td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                     ${data.quantity}
-                  </td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  ></td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  ></td>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                      text-align: right;
-                    "
-                  >
-                    ₹${data.amount}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="border-left: 1px solid #000; border-right: 1px solid #000">
-            <table cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tbody>
-                <tr>
-                  <td
-                    style="
-                      padding: 5px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    <p>Invoice Amount in Words</p>
-                    <p style="font-weight: 600">
-                      Forty Four Thousand Four Hundred Forty Rupees only
-                    </p>
-                  </td>
-                  <td
-                    style="
-                      width: 50%;
-                      padding: 0px;
-                      border-right: 1px solid #000;
-                      border-bottom: 1px solid #000;
-                    "
-                  >
-                    <table
-                      cellspacing="0"
-                      cellpadding="0"
-                      border="0"
-                      width="100%"
-                    >
-                      <tbody>
-                        <tr>
-                          <td colspan="2"
-                            style="
-                              padding: 5px;
-                            
-                            "
-                          >
-                            Amount
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                             
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                          Sub Total
-                          </td>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                              text-align: right;
-                            "
-                          >
-                          ₹${data.amount}
+  const toggle = id =>
+    setSel(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style="
-                              padding: 5px;
-                              
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            Sub Total
-                          </td>
-                          <td
-                            style="
-                              padding: 5px;
-                              border-right: 1px solid #000;
-                              border-bottom: 1px solid #000;
-                              text-align: right;
-                            "
-                          >
-                            ₹${data.amount}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-        <div>
-          <h2>Invoice - ${data.farmer.name}</h2>
-          <p><strong>Order Ref:</strong> ${data.orderReferenceNumber}</p>
-          <p><strong>Letter No:</strong> ${data.orderLetterNumber}</p>
-          <p><strong>Order Date:</strong> ${new Date(data.orderDate).toLocaleDateString()}</p>
-          <p><strong>Department:</strong> ${data.department.name}</p>
-          <hr/>
-          <p><strong>Plant:</strong> </p>
-          <p><strong>Qty:</strong> ${data.quantity}</p>
-          <p><strong>Amount:</strong> ₹${data.amount}</p>
-          <br/>
-          <p><em>Thank you from Almaq Biotech LLP</em></p>
+  const handlePDF = () => {
+    [...selected].forEach(id => {
+      const group = rows.find(x => x.uniqueId === id);
+      console.log('Selected group:', group);
+      if (!group) return;
+
+      const html = `
+      <div style=" padding:40px;font-family: Helvetica, Arial, sans-serif; font-size: 8pt; width: 210mm; vertical-align: top; border: 1px solid rgb(0, 0, 0);">
+        <table border="1" width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+         <tbody>
+          <tr>
+            <td style="width: 30%; padding: 30px; vertical-align: top;">  
+             <img src="almaq-logo.svg" alt="Logo" style="height:60px;margin-bottom:16px;" />
+            </td>
+            <td style="width: 40%; padding: 30px; text-align: left; vertical-align: top;">
+              <h1 style="font-size:24px;margin:0px">Almaq Biotech LLP</h1>
+              <p style="margin:0px">latur-nilang Road, Lodga</p>
+              <p style="margin:0px">Latur, Maharashtra, 123456</p>
+              <p style="margin:0px">Phone: +91 12345 67890</p>
+            </td>
+            <td style="width: 30%; padding: 30px; text-align: left; vertical-align: top;">
+              <p>GST No: 27AAECA1234A1Z5</p>
+              <p>NcS-TCP-Certified Lab</p>
+              <p>Regd. No: 123456789</p>
+              <p>Cerfication No: 987654321</p>
+            </td>
+         </tbody>
         </table>
-        </div>
-      `;
+      <table border="0" width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+        <tbody>
+        <tr>
+        <td style=" padding: 10px; vertical-align: top; border-bottom: 1px solid rgb(0, 0, 0); border-top: 1px solid rgb(0, 0, 0);">
+        Challan Date
+        </td>
+        <td style=" padding: 10px; text-align: left; vertical-align: top; border-top: 1px solid rgb(0, 0, 0); border-bottom: 1px solid rgb(0, 0, 0);">
+         ${group.dispatchDate || '12/12/2023'}
+        </td>
+        <td style=" padding: 10px; text-align: left; vertical-align: top; border-top: 1px solid rgb(0, 0, 0); border-bottom: 1px solid rgb(0, 0, 0);">
+        Challan No
+        </td>
+        <td style=" padding: 10px; vertical-align: top; border-bottom: 1px solid rgb(0, 0, 0); border-top: 1px solid rgb(0, 0, 0);">Challan No</td>
+        <td style="padding: 10px; text-align: left; vertical-align: top; border-bottom: 1px solid rgb(0, 0, 0); border-top: 1px solid rgb(0, 0, 0);">
+       ${group.challanNo}
+        </td>
+        </tr>
+        </tbody>
+        </table>
+        <div style="padding: 30px;">
+      <h2>Challan ${group.challanNo}</h2>
+      <p><strong>Farmer:</strong> ${group.farmerName}<br/>
+      <strong>Address:</strong> ${group.farmerAddress}<br/>
+      <strong>Vehicle:</strong> ${group.vehicle}<br/>
+      <strong>Dispatch:</strong> ${fmtDate(group.dispatchDate)}</p>
+      </div>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+            <thead><tr>
+            <th style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">Plant Type</th>
+            <th style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">Qty</th>
+            <th style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">Rate</th>
+            <th style=" text-align:right; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">Price</th>
+            </tr></thead>
+            <tbody>
+              ${group.items
+          .map(
+            i =>
+              `<tr>
+                      <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;">${i.plantType}</td>
+                      <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;">${i.quantity}</td>
+                      <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;">₹${i.pricePerUnit}</td>
+                      <td style=" text-align:right; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;">₹${i.price}</td>
+                      </tr>`
+          )
+          .join('')}
+              <tr>
+              <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>Total Plants</strong>
+              </td>
+              <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>${group.totalPlants}</strong>
+              </td>
+               <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>Total Amount</strong>
+              </td>
+              <td style=" text-align:right; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>₹${group.totalPrice}</strong>
+              </td>
+              </tr>
+              <tr>
+              <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>Vehicle</strong>
+              </td>
+              <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>${group.vehicle}</strong>
+              </td>
+               <td style=" text-align:left; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>Vehicle Fright</strong>
+              </td>
+              <td style=" text-align:right; padding:10px; border-right:1px solid #000;border-bottom:1px solid #000;border-top:1px solid #000;">
+              <strong>₹${group.vehicleFright}</strong>
+              </td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding: 30px; border-top: 1px solid #000;">
+          आज रोजी वरील प्रमाणे मिळालेली रोटे मी वैयक्तिक रित्या प्रत्यक्ष तपासून घेतली आहेत. सदर रूपे शेतात लागवडी योग्य असून हीरोपे पूर्ण निरोगी व जातिवंत आहेत. त्याबाबत माझी कोणतीही तक्रार नाही येथून पुढे रोपांची संपूर्ण जबाबदारी मी येत आहे
+          </div>
+          </div>`;
+      console.log('Selected html:', html);
 
-      const opt = {
-        margin: [0.5, 0.5], // 0.5in margins (top/bottom/left/right)
-        filename: `${data.farmer.name}_invoice.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2, // Improve resolution for sharp text
-          useCORS: true, // If you're loading any images from the web
-        },
-        jsPDF: {
-          unit: 'in',
-          format: 'a4',
-          orientation: 'portrait',
-        },
-      };
-
-      html2pdf().set(opt).from(content).save();
+      html2pdf()
+        .set({
+          margin: 0,
+          filename: `${group.farmerName.replace(/\s+/g, '_')}_${group.challanNo}.pdf`,
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        })
+        .from(html)
+        .save();
     });
   };
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Delivered Farmers</h2>
-      <ul className="space-y-2">
-        {farmers.map(f => (
-          <li key={f.itemId} className="flex items-center gap-4 border-b pb-2">
-            <input
-              type="checkbox"
-              checked={selected.includes(f.itemId)}
-              onChange={() => handleToggle(f.itemId)}
-            />
-            <div>
-              <p><strong>{f.farmer.name}</strong> – ₹{f.amount}</p>
-              <small>{f.plantType.name} | Qty: {f.quantity}</small>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <h2 className="text-2xl font-semibold mb-4">Delivered Challan Groups</h2>
 
-      <button
-        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded"
-        onClick={handleDownload}
-        disabled={selected.length === 0}
-      >
-        Download Selected Invoices
-      </button>
+      <div className="flex items-center gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="Search farmer / challan"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded w-64"
+        />
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-40"
+          disabled={!selected.size}
+          onClick={handlePDF}
+        >
+          Download PDF ({selected.size})
+        </button>
+      </div>
+
+
+      {loading ? (
+        <p>Loading…</p>
+      ) : (
+      <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
+          <table className="w-full border-0  mb-4">
+
+            {filtered.map(group => (
+              <tr key={group.uniqueId} className="border-0 rounded p-4 odd:bg-gray-100/50 even:bg-white">
+                <td className="p-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(group.uniqueId)}
+                      onChange={() => toggle(group.uniqueId)}
+                    />
+                    <FiUser/><strong>{group.farmerName}</strong>  
+                  </label>
+                </td>
+                <td className="p-3">
+                  <span className="font-semibold flex gap-2 items-center "><FiFileText />{group.challanNo}</span>
+                </td>
+                <td>
+                  <span className="font-semibold flex gap-2 items-center"><FiTruck/> {group.vehicle}</span>
+                </td>
+                <td>
+                  <span className='flex gap-2 items-center'><FiCalendar/>{fmtDate(group.dispatchDate)}</span>
+                  </td>
+
+                <td>
+                  <div className="flex gap-0 items-center">
+
+                      {group.items.map((item, idx) => (
+                        <span key={idx} className='flex gap-2'>
+                          <span className="p-2">{item.plantType}-{item.quantity} -₹{item.price}</span>
+                          {/* <span className="p-2 text-right">₹{item.pricePerUnit}</span> */}
+                        </span>
+                      ))}
+                       <span colSpan="3" className=" text-right">Total</span>
+                        <span className=" text-right">₹{group.totalPrice}</span>
+                      </div>
+                      <div className="font-semibold">
+                       
+                      </div>
+                  
+                </td>
+                {/* <td className="w-50"> 
+                  <div>Address: {group.farmerAddress}</div>
+                </td> */}
+
+
+              </tr>
+            ))}
+            </table>
+          
+        </div >
+      )}
+      <div>
+        {group && (
+          <div className="mt-8 border rounded p-6 bg-white shadow text-sm">
+            <div style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '11pt', width: '210mm', verticalAlign: 'top', border: '1px solid #000' }}>
+              <table border="1" width="100%" cellPadding="6" cellSpacing="0" style={{ borderCollapse: 'collapse', width: '100%', }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '30%', padding: '30px', verticalAlign: 'top' }}>
+                      <img src="/almaq-logo.svg" alt="Logo" style={{ height: '60px', marginBottom: '16px' }} />
+                    </td>
+                    <td style={{ width: '40%', padding: '30px', textAlign: 'left', verticalAlign: 'top' }}>
+                      <h1 style={{ fontSize: '24px', margin: '0px' }}>Almaq Biotech LLP</h1>
+                      <p style={{ margin: '0px' }}>latur-nilang Road, Lodga</p>
+                      <p style={{ margin: '0px' }}>Latur, Maharashtra, 123456</p>
+                      <p style={{ margin: '0px' }}>Phone: +91 12345 67890</p>
+                    </td>
+                    <td style={{ width: '30%', padding: '30px', textAlign: 'left', verticalAlign: 'top' }}>
+                      <p>GST No: 27AAECA1234A1Z5</p>
+                      <p>NcS-TCP-Certified Lab</p>
+                      <p>Regd. No: 123456789</p>
+                      <p>Certification No: 987654321</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <table border="1" width="100%" cellPadding="6" cellSpacing="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '30%', padding: '10px', verticalAlign: 'top', borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
+                      Date
+                    </td>
+                    <td style={{ width: '40%', padding: '10px', textAlign: 'left', verticalAlign: 'top', borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
+                      {group.dispatchDate || '12/12/2023'}
+                    </td>
+                    <td style={{ width: '30%', padding: '10px', verticalAlign: 'top', borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
+                      Challan No
+                    </td>
+                    <td style={{ width: '40%', padding: '10px', textAlign: 'left', verticalAlign: 'top', borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
+                      {group.challanNo}
+                    </td>
+                  </tr></tbody>
+              </table>
+              <h2 style={{ marginTop: '16px' }}>Challan {group.challanNo}</h2>
+              <p>
+                <strong>Farmer:</strong> {group.farmerName}<br />
+                <strong>Address:</strong> {group.farmerAddress}<br />
+                <strong>Vehicle:</strong> {group.vehicle}<br />
+                <strong>Dispatch:</strong> {fmtDate(group.dispatchDate)}
+              </p>
+
+              <table border="1" cellPadding="6" cellSpacing="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr><th>Plant Type</th><th>Qty</th><th>Rate</th><th>Price</th></tr>
+                </thead>
+                <tbody>
+                  {group.items.map((i, idx) => (
+                    <tr key={idx}>
+                      <td>{i.plantType}</td>
+                      <td>{i.quantity}</td>
+                      <td>₹{i.pricePerUnit}</td>
+                      <td>₹{i.price}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: 'right' }}><strong>Total</strong></td>
+                    <td><strong>₹{group.totalPrice}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
