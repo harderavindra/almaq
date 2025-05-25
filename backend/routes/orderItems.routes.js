@@ -1,6 +1,6 @@
 import express from 'express';
 import OrderItem from '../models/OrderItem.js'; 
-import { getOrderItems, updateOrderItemStatus, updateOrderItemStatusAndQuantity } from '../controllers/orederItems.controller.js';
+import { getOrderitemInvoice, getOrderItems, updateOrderItemStatus, updateOrderItemStatusAndQuantity } from '../controllers/orederItems.controller.js';
 
 const router = express.Router();
 
@@ -21,5 +21,6 @@ router.get("/by-orders", async (req, res) => {
 router.get("/", getOrderItems)
 router.put('/status/:id', updateOrderItemStatusAndQuantity);
   router.put("/:id/status", updateOrderItemStatus)
+  router.get("/invoice-items", getOrderitemInvoice)
 
 export default router;

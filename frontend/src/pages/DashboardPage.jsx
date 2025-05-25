@@ -4,69 +4,73 @@ import axios from "../api/axios"
 import { useState, useEffect } from 'react';
 import Avatar from '../components/common/Avatar';
 import SearchableFarmerSelect from '../components/common/SearchableFarmerSelect';
+import OrdersOverTimeChart from '../components/dashboard/OrdersOverTimeChart';
+import OrdersThisMonthChart from '../components/dashboard/OrdersThisMonthChart';
+import RevenueLineChart from '../components/dashboard/RevenueLineChart';
 const DashboardPage = () => {
-  const { user, logout, loading } = useAuth();
-  const [signedProfilePicUrl, setSignedProfilePicUrl] = useState('');
-
-  if (loading) return <p>Loading...</p>;
-
-  if (!user) return <p>User not logged in</p>;
-  useEffect(() => {
-    const fetchFarmers = async () => {
-      try {
-        const response = await axios.get('/farmers/latest');
-        setFarmers(response.data);
-      } catch (error) {
-        console.error('Failed to fetch farmers:', error);
-      }
-    };
-
-    fetchFarmers();
-  },[])
+  const [stats, setStats] = useState({
+    challans: 0,
+    deliveries: 0,
+    revenue: 0,
+    topFarmers: [],
+    topDepartments: []
+  });
 
   useEffect(() => {
-    const fetchSignedUrl = async () => {
-      if (user?.profilePic) {
-        try {
-          const response = await axios.get('/signed-url', {
-            params: {
-              type: 'view',
-              url: user.profilePic,  // full GCS URL saved in Mongo
-            },
-          });
-
-          setSignedProfilePicUrl(response.data.signedUrl);
-        } catch (error) {
-          console.error('Failed to fetch signed profile pic URL:', error);
-        }
-      }
+    // Fetch or calculate report data
+    // You can call APIs or compute from state/store
+    const fetchData = async () => {
+      // Example: Replace with real API/data logic
+      setStats({
+        challans: 42,
+        deliveries: 39,
+        revenue: 125000,
+        topFarmers: ['Ravi Patil', 'Sunita Deshmukh'],
+        topDepartments: ['Dept A', 'Dept B']
+      });
     };
 
-    fetchSignedUrl();
-  }, [user]);
+    fetchData();
+  }, []);
 
-const handleItemChange = ( field, value) => {
-console.log('handleItemChange', field, value);    
-}
   return (
-    <div>
-      <h1>Welcome, {user.name} 👋</h1>
-      <p>Email: {user.email}</p>
-      <Avatar src={signedProfilePicUrl} size="md" />
-      {/* <img src={profilePicUrl} alt="Profile" width="100" height="100" /> */}
+     <div className="p-6 space-y-8">
+      <h2 className="text-2xl font-bold">Dashboard Reports</h2>
 
-      <p>Role: {user.role} </p>
-      <button onClick={logout}>Logout</button>
-      <UploadComponent userId={user._id} currentProfilePic={user.profilePic} />
-      <button>Delete</button>
+    <RevenueLineChart />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* <OrdersOverTimeChart /> */}
+        {/* <OrdersThisMonthChart /> */}
+        <div className="bg-white rounded-xl shadow p-4 text-center">
+          <p className="text-gray-500">Total Challans This Month</p>
+          <h3 className="text-3xl font-semibold">{stats.challans}</h3>
+        </div>
+        <div className="bg-white rounded-xl shadow p-4 text-center">
+          <p className="text-gray-500">Orders Delivered</p>
+          <h3 className="text-3xl font-semibold">{stats.deliveries}</h3>
+        </div>
+        <div className="bg-white rounded-xl shadow p-4 text-center">
+          <p className="text-gray-500">Total Revenue</p>
+          <h3 className="text-3xl font-semibold">₹{stats.revenue.toLocaleString()}</h3>
+        </div>
+        <div className="bg-white rounded-xl shadow p-4 text-center">
+          <p className="text-gray-500">Top Farmers</p>
+          <ul className="mt-2 space-y-1">
+            {stats.topFarmers.map((name, idx) => (
+              <li key={idx} className="text-sm">{name}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
-      {/* Add more user-specific data here */}
-      <SearchableFarmerSelect
-        onChange={(val) => handleItemChange( 'farmerId', val)}
-        onAddNewFarmer={() => {
-          // setCurrentItemIndex(index);
-        }}
-      />
+      <div className="bg-white rounded-xl shadow p-4 mt-8">
+        <p className="text-gray-500 mb-2">Top Departments</p>
+        <ul className="list-disc list-inside">
+          {stats.topDepartments.map((dept, idx) => (
+            <li key={idx}>{dept}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

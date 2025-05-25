@@ -2,162 +2,220 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import OrderSidebar from '../components/layout/OrderSidebar';
+import { useAuth } from '../context/AuthContext';
+import { formatShortDate } from '../utils/dateUtils';
+import { FiClipboard } from 'react-icons/fi';
+import { OrderStatusIcon } from '../utils/constants';
+import { hasAccess } from '../utils/permissions';
+import Avatar from '../components/common/Avatar';
 
 const OrderViewPage = () => {
-    const { id } = useParams();
-    const [order, setOrder] = useState(null);
-    const [items, setItems] = useState([]);
+  const { user } = useAuth();
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [items, setItems] = useState([]);
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                const res = await api.get(`/orders/${id}`);
-                console.log('Order fetched:', res.data);
-                setOrder(res.data.order);
-                setItems(res.data.items);
-            } catch (err) {
-                console.error('Failed to fetch order', err);
-            }
-        };
-        fetchOrder();
-    }, [id]);
+  const canEdit = hasAccess(user?.role, ['admin', 'manager']);
+  const canView = hasAccess(user?.role, ['admin', 'report_viewer']);
 
-    const handleStatusChange = async (e) => {
-        const newStatus = e.target.value;
-        try {
-            await api.put(`/orders/${id}/status`, { status: newStatus });
-            setOrder(prev => ({ ...prev, status: newStatus }));
-        } catch (err) {
-            console.error('Error updating status:', err);
-            alert('Failed to update order status');
-        }
-    };
+  const fetchOrder = async () => {
+    try {
+      const res = await api.get(`/orders/${id}`);
+      console.log('Order fetched:', res.data);
+      setOrder(res.data.order);
+      setItems(res.data.items);
+      console.log('Items fetched:', res.data.order, res.data.items);
+    } catch (err) {
+      console.error('Failed to fetch order', err);
+    }
+  };
+  useEffect(() => {
 
-    if (!order) return <p>Loading...</p>;
+    fetchOrder();
+  }, [id]);
 
-    return (
-        <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-            <OrderSidebar activeStatus={order.status} />
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    try {
+      await api.put(`/orders/${id}/status`, { status: newStatus });
+      setOrder(prev => ({ ...prev, status: newStatus }));
+      fetchOrder(); // Refresh order data
 
-            <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl">
-                <h2 className="text-3xl font-bold mb-4">Orders</h2>
-                <div className="bg-blue-100/50 rounded-2xl p-8 mb-6 space-y-1">
-                    <div className="flex gap-6 justify-between">
-                        <div className="flex flex-col gap-1">
-                            <label>Department:</label>
-                            <p className="text-lg text-blue-700 font-medium">{order.departmentId?.name}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label>Status</label>
-                            <select
-                                value={order.status}
-                                onChange={handleStatusChange}
-                                className="text-lg text-blue-700 font-medium bg-white border rounded-md px-2 py-1"
-                            >
-                                <option value="Draft">Draft</option>
-                                <option value="Submitted">Submitted</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Delivered">Delivered</option>
-                                <option value="Cancelled">Cancelled</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex gap-6 justify-between">
-                        <div className="flex flex-col gap-1">
-                            <label>Order Ref No</label>
-                            <p className="text-lg text-blue-700 font-medium">{order?.orderRefNo}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label>Order Date</label>
-                            <p className="text-lg text-blue-700 font-medium">{new Date(order.orderDate).toLocaleDateString()}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label>Contact Person</label>
-                            <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactPerson}</p>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label>Contact Number</label>
-                            <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactNumber}</p>
-                        </div>
-                    </div>
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update order status');
+    }
+  };
+
+  if (!order) return <p>Loading...</p>;
+
+  return (
+    <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
+      <OrderSidebar activeStatus={order.status} />
+
+      <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl">
+        <div className='flex gap-4'><h2 className="text-3xl font-bold mb-4">Order</h2>
+          {
+            order.statusHistory.map((status, index) => (
+              <div key={index} className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1 border border-blue-200 rounded-full px-1 py-1">
+                  <span className={`text-sm ml-2 font-medium ${status.status === 'Approved' ? 'text-green-600' : 'text-red-600'}`}>
+                    <OrderStatusIcon status={status.status} size='18' color='primary' />
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {formatShortDate(status.updatedAt)}
+                  </span>
+                  <p className='text-sm'>{status.updatedBy?.firstName}</p>
+                  <Avatar src={status.updatedBy?.profilePic} alt={status.updatedBy?.firstName} size="xs" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Items with Challans</h3>
-<table className="w-full rounded-xl overflow-hidden" border="0">
-  <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
-    <tr>
-      <th className="px-3 py-3 font-semibold text-left">Farmer</th>
-      <th className="px-3 py-3 font-semibold text-left">Plant</th>
-      <th className="px-3 py-3 font-semibold text-left">Qty</th>
-      <th className="px-3 py-3 font-semibold text-left">Price Per Unit</th>
-      <th className="px-3 py-3 font-semibold text-left">Price</th>
-      <th className="px-3 py-3 font-semibold text-left">Delivered</th>
-      <th className="px-3 py-3 font-semibold text-left">Status</th>
-    </tr>
-  </thead>
-  <tbody>
-  {items.filter(item => !item.challanIds || item.challanIds.length === 0).map(item => (
-    
-    <tr key={item._id} className="even:bg-gray-100/70">
-        <td className="px-3 py-4">{item.farmerId?.name}</td>
-        <td className="px-3 py-4">{item.plantTypeId.name}</td>
-        <td className="px-3 py-4">{item.quantity}</td>
-        <td className="px-3 py-4">{item.pricePerUnit}</td>
-        <td className="px-3 py-4">{item.quantity * item.pricePerUnit}</td>
-        <td className="px-3 py-4">{item.deliveredQuantity}</td>
-        <td className="px-3 py-4">{item.status}</td>
-      </tr>
-    ))}
-  </tbody>
-  </table>
-
-                <h3 className="text-lg font-semibold mb-2">Items with Challans</h3>
-<table className="w-full rounded-xl overflow-hidden" border="0">
-  <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
-    <tr>
-      <th className="px-3 py-3 font-semibold text-left">Farmer</th>
-      <th className="px-3 py-3 font-semibold text-left">Plant</th>
-      <th className="px-3 py-3 font-semibold text-left">Qty</th>
-      <th className="px-3 py-3 font-semibold text-left">Price Per Unit</th>
-      <th className="px-3 py-3 font-semibold text-left">Price</th>
-      <th className="px-3 py-3 font-semibold text-left">Delivered</th>
-      <th className="px-3 py-3 font-semibold text-left">Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    {items.filter(item => item.challanIds.length > 0).map(item => (
-      <React.Fragment key={item._id}>
-        <tr className="even:bg-gray-100/70">
-          <td className="px-3 py-4">{item.farmerId?.name}</td>
-          <td className="px-3 py-4">{item.plantTypeId.name}</td>
-          <td className="px-3 py-4">{item.quantity}</td>
-          <td className="px-3 py-4">{item.pricePerUnit}</td>
-          <td className="px-3 py-4">{item.quantity * item.pricePerUnit}</td>
-          <td className="px-3 py-4">{item.deliveredQuantity}</td>
-          <td className="px-3 py-4">{item.status}</td>
-        </tr>
-        <tr className="bg-gray-50">
-          <td colSpan={7} className="px-4 pb-4 pt-1">
-            <div className="ml-2 mt-1 text-sm text-gray-600">
-              <strong>Challans:</strong>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                {item.challanIds.map(challan => (
-                  <li key={challan._id}>
-                    <span className="font-medium">#{challan.challanNo}</span> – Vehicle: <span className="font-medium">{challan.vehicleId?.vehicleNumber}</span>, Driver: {challan.vehicleId?.driverName}, Date: {new Date(challan.deliveryDate).toLocaleDateString()}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </td>
-        </tr>
-      </React.Fragment>
-    ))}
-  </tbody>
-</table>
-
-                <Link to="/orders" className="inline-block mt-4 text-blue-600 underline">← Back to Order List</Link>
-            </div>
+              </div>
+            ))
+          }
         </div>
-    );
+        <div className="bg-blue-100/50 rounded-2xl p-8 mb-6 space-y-1">
+          <div className="flex gap-6 justify-between mb-4">
+            <div className="flex flex-col gap-1">
+              <label>Department:</label>
+              <p className="text-lg text-blue-700 font-medium">{order.departmentId?.name}</p>
+            </div>
+            <div className="flex flex-col gap-1 min-w-50">
+              <label>Status</label>
+              {canEdit ? (
+                <select
+                  value={order.status}
+                  onChange={handleStatusChange}
+                  className="text-lg text-blue-700 font-medium bg-white border rounded-md px-2 py-1"
+                >
+                  <option value={order.status}>{order.status}</option>
+
+                  {/* For Draft orders */}
+                  {(order.status === 'Draft' && (user.role === 'admin' || user.role === 'manager')) && (
+                    <>
+                      <option value="Submitted">Submitted</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </>
+                  )}
+                  {(order.status === 'Submitted' && (user.role === 'admin' || user.role === 'manager')) && (
+                    <option value="Approved">Approved</option>
+                  )}
+
+
+                  {/* If all items are Delivered, allow marking order as Delivered */}
+                  {items.every(item => item.status === 'Delivered' && order.status === 'Approved') && (
+                    <option value="Delivered">Delivered</option>
+                  )}
+                </select>
+              ) : (
+                <p className="text-lg text-blue-700 font-medium capitalize">{order.status}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-6 justify-between">
+            <div className="flex flex-col gap-1">
+              <label>Order Ref No</label>
+              <p className="text-lg text-blue-700 font-medium">{order?.orderRefNo}</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label>Order Date</label>
+              <p className="text-lg text-blue-700 font-medium">{new Date(order.orderDate).toLocaleDateString()}</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label>Contact Person</label>
+              <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactPerson}</p>
+            </div>
+            <div className="flex flex-col gap-1 min-w-50">
+              <label>Contact Number</label>
+              <p className="text-lg text-blue-700 font-medium capitalize">{order.departmentId?.contactNumber}</p>
+            </div>
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Items with Challans</h3>
+        <table className="w-full border-collapse">
+          <thead className="bg-blue-50 text-blue-500 font-semibold">
+            <tr>
+              <th className="px-4 py-2 text-left">Plant</th>
+              <th className="px-4 py-2 text-left">Quantity</th>
+              <th className="px-4 py-2 text-left">Price/Unit</th>
+              <th className="px-4 py-2 text-left">Delivered</th>
+              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">Challans</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((itemGroup, idx) => {
+              const allDelivered = itemGroup.items.every((item) => item.status === 'Delivered');
+              console.log('Item Group2:', itemGroup);
+              const hasInvoice = itemGroup.items.some((item) => item.invoiceId);
+              const invoiceId = hasInvoice ? itemGroup.items.find((item) => item.invoiceId)?.invoiceId : null;
+              return (
+                <React.Fragment key={idx}>
+                  {/* Farmer Info Row */}
+                  <tr className="bg-gray-100">
+                    <td colSpan="6" className="px-4 py-3">
+                      <div className="text-gray-700">
+                        <strong>Farmer:</strong> {itemGroup.farmer?.name} | <strong>Address:</strong> {itemGroup.farmer?.address} | <strong>Contact:</strong> {itemGroup.farmer?.contactNumber}
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Items */}
+                  {itemGroup.items.map((item) => (
+                    <tr key={item._id} className="border-b">
+                      <td className="px-4 py-2">{item.plantTypeId?.name.trim()}</td>
+                      <td className="px-4 py-2">{item.quantity}</td>
+                      <td className="px-4 py-2">{item.pricePerUnit}</td>
+                      <td className="px-4 py-2">{item.deliveredQuantity}</td>
+                      <td className="px-4 py-2">{item.status}</td>
+                      <td className="px-4 py-2">
+                        {item.challanIds?.length > 0 ? (
+                          <ul className="list-disc pl-4">
+                            {item.challanIds.map((challan) => (
+                              <li key={challan._id}>
+                                <span className="font-medium">{challan.challanNo}</span> ({challan.vehicleId?.vehicleNumber.trim()} - {challan.vehicleId?.driverName})
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Create Invoice Link */}
+                  {allDelivered && (
+  <tr>
+    <td colSpan="6" className="px-4 py-2 text-right">
+      {hasInvoice && invoiceId ? (
+      <a
+  href={`/view-invoice/${invoiceId}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-blue-600 font-semibold hover:underline"
+>
+  View Invoice for {itemGroup.farmer?.name}
+</a>
+      ) : (
+        <Link
+          to={`/create-invoice/${order._id}/${itemGroup.farmer?._id}`}
+          className="text-green-600 font-semibold hover:underline"
+        >
+          Create Invoice for {itemGroup.farmer?.name}
+        </Link>
+      )}
+    </td>
+  </tr>
+)}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* <Link to="/orders" className="inline-block mt-4 text-blue-600 underline">← Back to Order List</Link> */}
+      </div>
+    </div>
+  );
 };
 
 export default OrderViewPage;

@@ -9,6 +9,7 @@ const orderItemSchema = new mongoose.Schema({
   pricePerUnit: Number,
   deliveredQuantity: { type: Number, default: 0 },
   challanIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Challan' }],
+  invoiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice', default: null },
   status: { type: String, enum: ['Pending', 'Partially Delivered', 'Delivered'], default: 'Pending' }
 }, { timestamps: true });
 

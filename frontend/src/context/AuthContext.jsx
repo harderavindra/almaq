@@ -32,9 +32,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));
   }, []);
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login,isAuthenticated, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

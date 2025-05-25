@@ -23,6 +23,11 @@ const StatusBubbleText = ({status ='success',icon, text, size= 'sm', className})
       background: "rgba(248, 138, 72, 0.3)",
       border: "1px solid #F88A48",
     },
+    info: {
+      color: "#3B82F6",
+      background: "rgba(59, 130, 246, 0.3)",
+      border: "1px solid #3B82F6",
+    },
   };
     const sizes = {
         sm: 14,

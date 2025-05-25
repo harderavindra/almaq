@@ -8,7 +8,24 @@ export const createOrder = async (req, res) => {
   try {
     const { departmentId, orderRefNo, orderLetterNumber, contactPerson, contactNumber, orderDate, status, items } = req.body;
 
-    const order = await Order.create({ departmentId, orderRefNo, orderLetterNumber, contactPerson, contactNumber, orderDate, status });
+    const order = await Order.create({ 
+      departmentId, 
+      orderRefNo, 
+      orderLetterNumber, 
+      contactPerson, 
+      contactNumber, 
+      orderDate, 
+      status: status || 'Draft', 
+      createdBy: req.user._id, 
+      statusHistory: [
+        {
+          status: status || 'Draft',
+          updatedBy: req.user._id,
+          updatedAt: new Date(),
+        },
+      ],
+
+    });
     const orderItems = items.map(item => ({
       orderId: order._id,
       farmerId: item.farmerId,
@@ -32,28 +49,51 @@ export const getOrderWithItemsById = async (req, res) => {
     const { id } = req.params;
 
     // Fetch order
-    const order = await Order.findById(id).populate('departmentId');
+    const order = await Order.findById(id)
+      .populate('departmentId', 'name contactNumber contactPerson address')
+      .populate('createdBy', 'firstName lastName email')
+      .populate('statusHistory.updatedBy', '-_id firstName lastName email profilePic');
+
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // Fetch order items linked to this order
+    // Fetch order items
     const orderItems = await OrderItem.find({ orderId: id })
-      .populate('farmerId')
-      .populate('plantTypeId')
+      .populate('farmerId', 'name contactNumber address')
+      .populate('plantTypeId', 'name ratePerUnit')
       .populate({
         path: 'challanIds',
-        select: 'challanNo deliveryDate vehicleId notes', // include relevant fields
+        select: 'challanNo deliveryDate vehicleId notes',
         populate: {
           path: 'vehicleId',
           select: 'vehicleNumber driverName'
         }
-      });;
+      });
 
-    res.json({ order, items: orderItems });
+    // Group items by farmerId
+    const groupedByFarmer = {};
+
+    orderItems.forEach(item => {
+      const farmerId = item.farmerId?._id?.toString() || 'Unknown';
+
+      if (!groupedByFarmer[farmerId]) {
+        groupedByFarmer[farmerId] = {
+          farmer: item.farmerId, // farmer details
+          items: []
+        };
+      }
+
+      groupedByFarmer[farmerId].items.push(item);
+    });
+
+    const groupedData = Object.values(groupedByFarmer);
+
+    res.json({ order, items: groupedData });
+
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 };
-
 
 export const getOrders = async (req, res) => {
   try {
@@ -166,6 +206,7 @@ export const deleteOrder = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Updating order status for ID:", id);
     const { status } = req.body;
 
     // Validate the status input
@@ -181,6 +222,14 @@ export const updateOrderStatus = async (req, res) => {
 
     // Update the order status
     order.status = status;
+
+    // Add status change to statusHistory
+    order.statusHistory.push({
+      status: status,
+      updatedBy: req.user._id, // Ensure you have the user object available in req.user (e.g., via auth middleware)
+      updatedAt: new Date()
+    });
+
     const updatedOrder = await order.save();
 
     res.status(200).json({

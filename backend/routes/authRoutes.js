@@ -7,8 +7,8 @@ import {
   logoutUser,
   getAllUsers,
   refreshToken,
-  upadeProfilePic,
   deleteProfilePic,
+  updateProfilePic,
   updateProfile,
   getProfile,
   deleteUser,
@@ -32,8 +32,7 @@ router.post('/logout', logoutUser);
 router.post('/refresh', refreshToken); // this is the route you need
 // Protected Route (Admin only)
 router.get('/users', protect, isAdmin, getAllUsers);
-router.get('/users', protect, isAdmin, getAllUsers);
-router.put('/update-profile-pic', upadeProfilePic)
+router.put('/update-profile-pic', updateProfilePic)
 router.post('/delete-file', deleteProfilePic);
 router.route('/users/:userId')
   .get(protect, getProfile)

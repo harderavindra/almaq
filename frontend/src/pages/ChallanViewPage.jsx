@@ -3,13 +3,19 @@ import api from "../api/axios";
 import { Link, useParams } from 'react-router-dom';
 import { FiPlus, FiTruck } from 'react-icons/fi';
 import InputText from '../components/common/InputText';
+import Button from '../components/common/Button';
+import { hasAccess } from '../utils/permissions';
+import { useAuth } from '../context/AuthContext';
 
 const ChallanViewPage = () => {
+  const { user } = useAuth();
+  const canUpdate = hasAccess(user?.role, ['admin', 'manager']);
+  const canDelete = hasAccess(user?.role, ['admin', 'manager']);
   const { challanId } = useParams();
   const [challan, setChallan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [newDeliveredQuantities, setNewDeliveredQuantities] = useState({});
-const [selectedStatuses, setSelectedStatuses] = useState({});
+  const [selectedStatuses, setSelectedStatuses] = useState({});
 
   const fetchChallan = useCallback(async () => {
     try {
@@ -29,7 +35,7 @@ const [selectedStatuses, setSelectedStatuses] = useState({});
 
 
 
-  const handleStatusUpdate = async (itemId, status='Delivered') => {
+  const handleStatusUpdate = async (itemId, status = 'Delivered') => {
 
 
 
@@ -73,12 +79,23 @@ const [selectedStatuses, setSelectedStatuses] = useState({});
         <h2 className="text-3xl font-bold mb-4">Challan Details</h2>
 
         <div className="bg-blue-100/50 rounded-2xl p-8 mb-6 space-y-1">
-          <div className="flex gap-6 justify-between">
+          <div className="flex gap-6 justify-start">
             <div>
               <label>Challan Number:</label>
               <p className="text-lg text-blue-700 font-medium">{challan.challanNo}</p>
             </div>
             <div>
+              <label>Created Date</label>
+              <p className="text-lg text-blue-700 font-medium">{new Date(challan.createdAt).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <label>Dispatch Date</label>
+              <p className="text-lg text-blue-700 font-medium">{new Date(challan.dispatchDate).toLocaleDateString()}</p>
+            </div>
+
+          </div>
+          <div className="flex gap-6">
+            <div className='w-full'>
               <label>Vehicle:</label>
               <p className="text-lg text-blue-700 font-medium">
                 {challan.vehicleId?.vehicleNumber || 'N/A'} ({challan.vehicleId?.transportName || 'N/A'}) - {challan.vehicleId?.driverName || 'N/A'}
@@ -86,11 +103,13 @@ const [selectedStatuses, setSelectedStatuses] = useState({});
             </div>
           </div>
           <div className="flex gap-6">
-            <div>
-              <label>Delivery Date:</label>
-              <p className="text-lg text-blue-700 font-medium">{new Date(challan.deliveryDate).toLocaleDateString()}</p>
+
+
+            <div className='w-full'>
+              <label>Route Details</label>
+              <p className="text-lg text-blue-700 font-medium">{challan.routeDetails}</p>
             </div>
-            <div>
+            <div className='w-full'>
               <label>Notes:</label>
               <p className="text-lg text-blue-700 font-medium">{challan.notes}</p>
             </div>
@@ -105,51 +124,58 @@ const [selectedStatuses, setSelectedStatuses] = useState({});
               <th className="px-3 py-3">Farmer</th>
               <th className="px-3 py-3">Plant Type</th>
               <th className="px-3 py-3">Ordered Qty</th>
-              <th className="px-3 py-3">Status</th>
+              <th className="px-3 py-3">Price Per Unit </th>
+              <th className="px-3 py-3 w-50">Status</th>
+              <th className="px-3 py-3 w-50">Action</th>
             </tr>
           </thead>
           <tbody>
-          {challan.items.map((item, index) => {
-  const orderItem = item.orderItemId || {};
-  const farmer = orderItem.farmerId || {};
-  const plant = orderItem.plantTypeId || {};
-  const orderQty = orderItem.quantity || 0;
-  const status = item.status || 'n/a';
+            {challan.items.map((item, index) => {
+              const orderItem = item.orderItemId || {};
+              const farmer = orderItem.farmerId || {};
+              const plant = orderItem.plantTypeId || {};
+              const orderQty = orderItem.quantity || 0;
+              const status = item.status || 'n/a';
 
 
 
 
-  return (
-    <tr key={item._id}>
-      <td className="px-3 py-4">{index + 1}</td>
-      <td className="px-3 py-4">{farmer.name || 'Unknown'}</td>
-      <td className="px-3 py-4">{plant.name || 'N/A'}</td>
-      <td className="px-3 py-4">{item.quantity}</td>
-      <td className="px-3 py-4">
-        
-      </td>
-      <td className="px-3 py-4">
-      
-          <div className="flex items-center gap-2">
-           {
-status === 'Delivered' ? (
-              <span className="text-green-500 font-semibold">{status}</span>
-            ) : (
-               <button
-              className="px-2 py-1 text-xs bg-blue-500 text-white rounded"
-              onClick={()=>handleStatusUpdate(orderItem._id, 'Delivered',orderQty )}
-            >
-              Update
-            </button>
-            )}
-           
-           
-          </div>
-      
-      </td>
-    </tr>
-  );
-})}
+              return (
+                <tr key={item._id}>
+                  <td className="px-3 py-4">{index + 1}</td>
+                  <td className="px-3 py-4">{farmer.name || 'Unknown'}</td>
+                  <td className="px-3 py-4">{plant.name || 'N/A'}</td>
+                  <td className="px-3 py-4">{item.quantity}</td>
+                  <td className="px-3 py-4">
+                    {item.orderItemId.pricePerUnit}
+                  </td>
+                  <td>{status}</td>
+                  <td className="px-3 py-4">
+
+                    <div className="flex items-center gap-2">
+                      {
+                        status === 'Delivered' ? (
+                          <span className="text-green-500 font-semibold">{status}</span>
+                        ) : (
+                          <>
+                          {canUpdate  && ( 
+                          <Button size='sm' width='auto'
+
+                            onClick={() => handleStatusUpdate(orderItem._id, 'Delivered', orderQty)}
+                          >
+                            Confirm Delivery
+                          </Button>
+                        )}
+                        </>
+                        )}
+
+
+                    </div>
+
+                  </td>
+                </tr>
+              );
+            })}
 
 
           </tbody>

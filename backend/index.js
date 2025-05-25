@@ -17,6 +17,8 @@ import challanRoutes from "./routes/challan.routes.js";
 import orderItemsRoutes from "./routes/orderItems.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
 import utilityRoutes from "./routes/utility.routes.js";
+import reportyRoutes from "./routes/reporty.routes.js";
+import invoiceRoutes from "./routes/invoice.routes.js";
 dotenv.config();
 
 const app = express();
@@ -53,6 +55,8 @@ app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/challans", challanRoutes);
 app.use("/api/orderItems", orderItemsRoutes);
 app.use("/api/utility", utilityRoutes);
+app.use("/api/reports", reportyRoutes);
+app.use("/api/invoices", invoiceRoutes);
 
 
 

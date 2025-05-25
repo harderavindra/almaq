@@ -44,7 +44,7 @@ const Avatar = ({ className, size = 'sm', src, name }) => {
         src={imageSrc}
         alt={name || 'User Avatar'}
         onError={() => setImageSrc(avatarPlaceholder)}
-        className={`${sizes[size]} rounded-full object-cover ${className} border border-gray-500`}
+        className={`${sizes[size]} rounded-full object-cover ${className} border-0 border-gray-500`}
       />
       {name && (
         <div className="absolute left-1/2 -translate-x-1/2 -top-8 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">

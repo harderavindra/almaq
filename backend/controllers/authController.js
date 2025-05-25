@@ -6,22 +6,26 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 import { deleteFileFromGCS, generateSignedUploadUrl, generateSignedUrl } from '../utils/generateSignedUrl.js';
 
 import fs from 'fs';
+import { console } from 'inspector/promises';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); 
 
 // @desc   Register new user
 export const registerUser = async (req, res) => {
-  const { name, email, password, role,profilePic } = req.body;
+  const { firstName,lastName, gender, email, password, role,profilePic } = req.body;
+  console.log("Registering user:", req.body);
 
   const userExists = await User.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  const user = await User.create({ name, email, password, role, profilePic });
+  const user = await User.create({ firstName,lastName,gender, email, password, role, profilePic });
 
   if (user) {
     res.status(201).json({
       _id: user._id,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      gender: user.gender,
       email: user.email,
       role: user.role,
       profilePic: user.profilePic,
@@ -57,7 +61,7 @@ export const loginUser = async (req, res) => {
     })
     .json({
       _id: user._id,
-      name: user.name,
+      firstName: user.firstName,
       email: user.email,
       role: user.role,
       profilePic: user?.profilePic,
@@ -99,11 +103,11 @@ export const logoutUser = (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
+    console.log("Page")
     const { page = 1, limit = 10, search = '' } = req.query;
-
     const query = {
       $or: [
-        { name: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ],
     };
@@ -130,7 +134,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-export const upadeProfilePic = async (req, res) => {
+export const updateProfilePic = async (req, res) => {
   try {
     const { profilePic,userId } = req.body;
     console.log(userId,profilePic)
@@ -202,25 +206,32 @@ export const getProfile = async (req, res) => {
 // @access  Private
 export const updateProfile = async (req, res) => {
   try {
-    const { name, profilePic } = req.body;
-
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.params.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (name) user.name = name;
-    if (profilePic) user.profilePic = profilePic;
+    // List of fields any user can update
+    const allowedFields = ['gender', 'firstName', 'lastName', 'profilePic'];
+
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+
+    // Only allow role update if the current user is an admin
+    if (req.body.role !== undefined) {
+      if (req.user?.role === 'admin') {
+        user.role = req.body.role;
+      } else {
+        return res.status(403).json({ message: 'Only admins can update roles' });
+      }
+    }
 
     await user.save();
 
-    res.status(200).json({
-      message: 'Profile updated successfully',
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        profilePic: user.profilePic,
-      },
-    });
+    const { password, ...userData } = user.toObject(); // Exclude password
+    res.status(200).json({ message: 'Profile updated successfully', user: userData });
+
   } catch (err) {
     console.error('Error updating profile:', err);
     res.status(500).json({ message: 'Server error' });

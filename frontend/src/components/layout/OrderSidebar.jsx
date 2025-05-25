@@ -2,17 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiCheckSquare, FiClipboard, FiClock, FiPlus, FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/axios';
-const statuses = ["Draft", "Submitted", "Approved", "Delivered", "Cancelled"];
-const statusIcons = {
-  Draft: FiClipboard,
-  Submitted: FiClock,
-  Approved: FiCheckSquare,
-  Delivered: FiThumbsUp,
-  Cancelled: FiTrash2,
-};
+import { OrderStatusIcon } from '../../utils/constants';
+import { useAuth } from '../../context/AuthContext';
+import { hasAccess } from '../../utils/permissions';
+const statuses = ["Draft", "Submitted", "Approved", "Delivered", "Cancelled",];
+
 
 const OrderSidebar = ({ activeStatus }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+   const canEdit = hasAccess(user?.role, ['admin', 'manager']);
+    const canView = hasAccess(user?.role, ['viewer']);
     const [counts, setCounts] = useState({});
     const [highlighted, setHighlighted] = useState(activeStatus || '');
 
@@ -45,6 +45,7 @@ const OrderSidebar = ({ activeStatus }) => {
     <div className="w-52 h-full p-4">
       <h3 className="text-lg font-bold mb-4">Order Status</h3>
       <ul className="space-y-2">
+        {canEdit && (
       <li
            
               className={`cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center ${activeStatus === "Add" ? "bg-blue-500 text-white" : "hover:bg-blue-100"}`}
@@ -55,22 +56,23 @@ const OrderSidebar = ({ activeStatus }) => {
               Add Order
               </Link>
             </li>
+        )}
         {statuses.map((status) => {
-          const Icon = statusIcons[status];
+         
            const count = counts[status] || 0;
             const isDisabled = count === 0;
-          const isActive = highlighted === status;
+          const isActive = activeStatus === status ;
           return (
              <li
               key={status}
               className={`
                 px-5 py-2 rounded-full flex justify-between items-center
-                ${isDisabled ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer hover:bg-blue-100'}
+                ${isDisabled ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer hover:bg-blue-600 hover:text-white'}
                 ${isActive ? 'bg-blue-500 text-white' : ''}
               `}
               onClick={() => !isDisabled && handleClick(status)}
             >
-              <Icon size={20} />
+              <OrderStatusIcon status={status} size={20} color={``} />
               {status}
                <span className="text-sm font-bold">{count}</span>
             </li>

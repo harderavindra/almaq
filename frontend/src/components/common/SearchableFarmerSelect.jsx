@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
 const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -67,7 +69,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer }) 
             onClick={() => {
               setSearchTerm('');
               onAddNewFarmer();
-              setShowDropdown(false);
+              navigate('/master/farmers');
             }}
             className="px-4 py-2 text-blue-600 cursor-pointer hover:bg-gray-100"
           >

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
+import api from '../api/axios';
 import UserCard from '../components/user/UserCard';
 import { useToast } from '../context/ToastContext';
 import LoaderSpinner from '../components/common/LoaderSpinner';
 import SearchInput from '../components/common/SearchInput';
 import { Link } from 'react-router-dom';
 import ProfilePage from '../components/user/ProfilePage';
+import IconButton from '../components/common/IconButton';
+import { FiPlus } from 'react-icons/fi';
+import RegisterUserForm from '../components/user/RegisterUserForm';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -14,19 +17,16 @@ const UsersPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null)
-
+  const [sidePanel, setSidePanel] = useState(false)
   const { showToast } = useToast();
 
-  const handleClick = () => {
-    showToast('User created successfully!', 'success');
-  };
 
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
 
-      const { data } = await axios.get('/auth/users', {
+      const { data } = await api.get('/auth/users', {
         params: { page, limit: 3, search }
       });
 
@@ -47,10 +47,6 @@ const UsersPage = () => {
     fetchUsers();
   }, [page, search]);
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPage(1); // reset to page 1 on search
-  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -63,6 +59,9 @@ const UsersPage = () => {
       if (page !== 1) setPage(1);
     }
   };
+  const handelUserRegister = () => {
+   
+  }
 
 
   return (
@@ -70,12 +69,15 @@ const UsersPage = () => {
       <div className="flex bg-white rounded-3xl border border-gray-200 min-h-screen">
 
         <div className="mb-4 flex flex-col w-full py-5 gap-7">
-          <div className='p-5'>
+          <div className='p-5 gap-2 flex justify-between items-center'>
           <SearchInput
+            name="search"
             value={search}
+
             onDebouncedChange={handleDebouncedSearch}
             placeholder="Search by name or email"
           />
+          <IconButton icon={<FiPlus />}  label='' onClick={()=>setSidePanel('register')} />
           </div>
 
           {loading ? (
@@ -86,7 +88,7 @@ const UsersPage = () => {
             <p>No users found.</p>
           ) : (
             <div  className="flex flex-col w-full">
-              <div className="flex flex-col w-full">
+              <div className={`flex flex-col w-full justify-between px-5`}>
                 {users.map((user) => (
                   <div
                     key={user._id}
@@ -94,10 +96,11 @@ const UsersPage = () => {
 
 
                       setSelectedUser(user._id);
+                      setSidePanel('profile')
 
 
                     }}
-                    className="cursor-pointer"
+                    className={`${user._id === selectedUser ? 'bg-gray-50 border border-gray-300' : ''} cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition duration-200 ease-in-out rounded-lg p-4 mb-4`}
                   >
                     <UserCard user={user} />
                   </div>
@@ -132,9 +135,19 @@ const UsersPage = () => {
           )}
         
         </div>
-        {selectedUser && (
-            <div id="profile-section" className="mt-10 w-full ">
-              <ProfilePage userId={selectedUser} />
+
+        {sidePanel === "profile"  && (
+          <div className="px-5 py-10 min-w-lg">
+            <div id="profile-section" className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-gray-300 ">
+              <ProfilePage userId={selectedUser} onUserUpdated={fetchUsers}  onClose={()=>setSelectedUser('')} />
+            </div>
+            </div>
+          )}
+          {sidePanel === "register" && (
+              <div className="px-5 py-10 min-w-lg">
+            <div id="profile-section" className="max-w-xl mx-auto p-6 bg-white rounded-2xl border border-gray-300 ">
+              <RegisterUserForm onClose={()=>setSidePanel('')} onUserRegistered={handelUserRegister} />
+            </div>
             </div>
           )}
       </div>
