@@ -39,7 +39,7 @@ function App() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/new-user" element={<NewUserPage />} />
 
-              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route element={<ProtectedRoute allowedRoles={['admin','manager']} />}>
                 <Route path="/users" element={<UsersPage />} />
               </Route>
               <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
