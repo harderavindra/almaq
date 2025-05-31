@@ -25,12 +25,12 @@ router.get('/latest', async (req, res) => {
 
 router.post("/", async (req, res) => {
    try {
-    const { name, address, contactNumber } = req.body;
-    if (!name) {
+    const { firstName, lastName, gender, contactNumber , idNumber, state, district, taluka,city, address} = req.body;
+    if (!firstName || !lastName) {
       return res.status(400).json({ message: "Farmer name is required" });
     }
 
-    const farmer = await Farmer.create({ name, address, contactNumber });
+    const farmer = await Farmer.create({ firstName, lastName, gender, contactNumber , idNumber, state, district, taluka, city, address});
     res.status(201).json(farmer);
   } catch (err) {
     console.error("Error creating farmer:", err);
@@ -101,11 +101,11 @@ router.get('/:id', async (req, res) => {
 // Update a farmer
 router.put('/:id', async (req, res) => {
   try {
-    const { name, contactNumber, address } = req.body;
+    const { firstName, lastName, gender, contactNumber , idNumber, state, district, taluka, city, address} = req.body;
 
     const updatedFarmer = await Farmer.findByIdAndUpdate(
       req.params.id,
-      { name, contactNumber, address },
+      {firstName, lastName, gender, contactNumber , idNumber, state, district, taluka, city, address},
       { new: true, runValidators: true }
     );
 

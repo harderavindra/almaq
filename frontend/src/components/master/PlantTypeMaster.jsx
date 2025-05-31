@@ -27,6 +27,7 @@ const PlantTypeMaster = () => {
     ] :
     [
         { header: 'Name', key: 'name' },
+        { header: 'HSN', key: 'HSN' },
         { header: 'Rate/Unit (₹)', key: 'ratePerUnit' },
         { header: 'Decription', key: 'description' },
         { header: 'Active', key: 'isActive',  render: item => item.isActive ? 'Yes' : 'No' }
@@ -78,6 +79,7 @@ const PlantTypeMaster = () => {
             setCurrentItem(data);
             setFormData({
                 name: data.name || '',
+                HSN: data.HSN || '',
                 description: data.description || '',
                 ratePerUnit: data.ratePerUnit || '',
                 isActive: data.isActive ?? true
@@ -173,6 +175,13 @@ const PlantTypeMaster = () => {
                                 label="Name"
                                 value={formData.name || ''}
                                 handleOnChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                            <InputText
+                                type="text"
+                                label="HSN"
+                                value={formData.HSN || ''}
+                                handleOnChange={(e) => setFormData({ ...formData, HSN: e.target.value })}
                                 required
                             />
                             <InputText

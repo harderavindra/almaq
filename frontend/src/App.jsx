@@ -19,6 +19,8 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
 import ViewInvoicePage from './pages/ViewInvoicePage';
 import PrintLayout from './components/layout/PrintLayout.';
+import UpdatePayment from './pages/UpdatePayment';
+import InvoiceList from './pages/InvoiceList';
 
 function App() {
   return (
@@ -37,7 +39,9 @@ function App() {
             </Route>
             <Route element={<AdminLayout />}>
               <Route path="/" element={<DashboardPage />} />
+                <Route path="/payment-invoice/:id/" element={<UpdatePayment />} />
               <Route path="/new-user" element={<NewUserPage />} />
+                <Route path="/invoices" element={<InvoiceList />} />
 
               <Route element={<ProtectedRoute allowedRoles={['admin','manager']} />}>
                 <Route path="/users" element={<UsersPage />} />

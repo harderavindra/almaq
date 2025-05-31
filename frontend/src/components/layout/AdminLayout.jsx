@@ -18,6 +18,7 @@ const AdminLayout = ({ children }) => {
             <li className='px-3'><NavLink to="/" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Dashboard</NavLink></li>
             <li className='px-3'><NavLink to="/orders" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Orders</NavLink></li>
             <li className='px-3'><NavLink to="/challans" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Challans</NavLink></li>
+            <li className='px-3'><NavLink to="/invoices" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Invoice</NavLink></li>
             { user.role === 'admin' && (
             <li className='px-3'><NavLink to="/users" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Users</NavLink></li>
             )}

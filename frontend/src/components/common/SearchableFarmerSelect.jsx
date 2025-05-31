@@ -51,7 +51,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer }) 
       />
 
       {showDropdown && suggestions.length > 0 && (
-        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded mt-1 shadow max-h-60 overflow-y-auto">
+        <ul className="absolute bottom-[42px] z-10 w-full bg-white border border-gray-300 rounded mt-1 shadow max-h-60 overflow-y-auto">
           {suggestions.map((farmer) => (
             <li
               key={farmer._id}
@@ -73,7 +73,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer }) 
             }}
             className="px-4 py-2 text-blue-600 cursor-pointer hover:bg-gray-100"
           >
-            ➕ Add New Farmer
+            ➕ Add New
           </li>
         </ul>
       )}

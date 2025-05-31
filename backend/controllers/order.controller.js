@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import OrderItem from '../models/OrderItem.js';
 import Farmer from '../models/Farmer.js'; // Assuming you have a Farmer model
 import Department from '../models/Department.js';
+import Invoice from '../models/Invoice.js';
 
 export const createOrder = async (req, res) => {
   try {
@@ -43,7 +44,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-
+//order viwe page
 export const getOrderWithItemsById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -72,18 +73,31 @@ export const getOrderWithItemsById = async (req, res) => {
     // Group items by farmerId
     const groupedByFarmer = {};
 
-    orderItems.forEach(item => {
+ for (const item of orderItems) {
       const farmerId = item.farmerId?._id?.toString() || 'Unknown';
 
+      // If this farmer group hasn't been initialized, do it now
       if (!groupedByFarmer[farmerId]) {
         groupedByFarmer[farmerId] = {
           farmer: item.farmerId, // farmer details
-          items: []
+          items: [],
+          invoice: null // Placeholder for invoice details
         };
+
+        // Fetch invoice for this order and farmer (if any)
+        const invoice = await Invoice.findOne({
+          orderId: id,
+          farmerId: farmerId
+        }).select('invoiceNumber invoiceDate paymentStatus amountReceived paymentDate paymentMode');
+
+        if (invoice) {
+          groupedByFarmer[farmerId].invoice = invoice;
+        }
       }
 
+      // Push the order item
       groupedByFarmer[farmerId].items.push(item);
-    });
+    }
 
     const groupedData = Object.values(groupedByFarmer);
 

@@ -49,7 +49,7 @@ const OrderCreatePage = () => {
           api.get('/plants'),
           api.get('/utility/generate-number?type=ORD')
         ]);
-        
+
         setDepartments(deptRes.data.data);
         setFarmers(farmerRes.data);
         setPlants(plantRes.data.data);
@@ -58,7 +58,7 @@ const OrderCreatePage = () => {
       } catch (error) {
         console.error('Error loading initial data:', error);
         setMessage({ type: 'error', text: 'Failed to load dropdown data' });
-      }finally {
+      } finally {
         setIsLoading(false);
       }
     };
@@ -81,18 +81,25 @@ const OrderCreatePage = () => {
       const selectedPlant = plants.find((p) => p._id === value);
       newItem.pricePerUnit = selectedPlant?.ratePerUnit || '';
     }
-
+    // Determine current farmerId and plantTypeId for duplicate check
+  const farmerIdToCheck = field === 'farmerId' ? value : newItem.farmerId;
+  const plantTypeIdToCheck = field === 'plantTypeId' ? value : newItem.plantTypeId;
     // Check for duplicates
     const isDuplicate = form.items.some((item, i) => {
       if (i === index) return false; // skip self
-      return item.farmerId === (field === 'farmerId' ? value : newItem.farmerId) &&
-        item.plantTypeId === (field === 'plantTypeId' ? value : newItem.plantTypeId);
+      console.log(field)
+          return item.farmerId === farmerIdToCheck && item.plantTypeId === plantTypeIdToCheck;
+
     });
 
     if (isDuplicate) {
       setMessage({ type: 'error', text: 'This farmer and plant combination is already added.' });
       return;
     }
+    setMessage({
+  type: 'success',
+  text: 'Farmer and plant added successfully.'
+});
 
     newItems[index] = newItem;
     setForm({ ...form, items: newItems });
@@ -122,22 +129,22 @@ const OrderCreatePage = () => {
     const newItems = form.items.filter((_, i) => i !== index);
     setForm({ ...form, items: newItems });
   };
-const handleChange = (field, value) => {
-  if (field === 'departmentId') {
-    const selectedDepartment = departments.find((d) => d._id === value);
-    setForm({
-      ...form,
-      departmentId: value,
-      contactPerson: selectedDepartment?.contactPerson || '',
-      contactNumber: selectedDepartment?.contactNumber || '',
-    });
-  } else {
-    setForm({
-      ...form,
-      [field]: value,
-    });
-  }
-};
+  const handleChange = (field, value) => {
+    if (field === 'departmentId') {
+      const selectedDepartment = departments.find((d) => d._id === value);
+      setForm({
+        ...form,
+        departmentId: value,
+        contactPerson: selectedDepartment?.contactPerson || '',
+        contactNumber: selectedDepartment?.contactNumber || '',
+      });
+    } else {
+      setForm({
+        ...form,
+        [field]: value,
+      });
+    }
+  };
   const validateForm = () => {
     // Basic validation
     if (!form.departmentId) {
@@ -179,7 +186,7 @@ const handleChange = (field, value) => {
 
       // Get new order reference number
       const response = await api.get('/utility/generate-number?type=ORD');
-      
+
       // Reset form with new reference number
       setForm({
         departmentId: '',
@@ -210,12 +217,14 @@ const handleChange = (field, value) => {
     <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
       <OrderSidebar activeStatus={'Add'} />
 
-      <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl">
+      <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl relative">
         <StatusMessageWrapper
-  loading={isLoading}
-  success={message.type === 'success' ? message.text : ''}
-  error={message.type === 'error' ? message.text : ''}
-/>
+          loading={isLoading}
+          success={message.type === 'success' ? message.text : ''}
+          error={message.type === 'error' ? message.text : ''}
+              className="sticky top-0 z-10"
+
+        />
         <h2 className="text-3xl font-bold mb-4">Add Orders</h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -284,27 +293,27 @@ const handleChange = (field, value) => {
               className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-4 p-4 border border-gray-300 rounded-lg"
             >
               <div>
-                 <SearchableFarmerSelect
-        value={item.farmerId}
-        onChange={(val) => handleItemChange(index, 'farmerId', val)}
-        onAddNewFarmer={() => {
-          setCurrentItemIndex(index);
-          setShowAddFarmer(true);
-        }}
-      />
+                <SearchableFarmerSelect
+                  value={item.farmerId}
+                  onChange={(val) => handleItemChange(index, 'farmerId', val)}
+                  onAddNewFarmer={() => {
+                    setCurrentItemIndex(index);
+                    setShowAddFarmer(true);
+                  }}
+                />
               </div>
 
-               <div>
-                <SelectDropdown 
-                  label={'Plant Type'} 
-                  optionLabel='name' 
-                  optionValue='_id' 
-                  key='_id' 
-                  value={item.plantTypeId} 
-                  options={plants} 
+              <div>
+                <SelectDropdown
+                  label={'Plant Type'}
+                  optionLabel='name'
+                  optionValue='_id'
+                  key='_id'
+                  value={item.plantTypeId}
+                  options={plants}
                   onChange={(e) => handleItemChange(index, 'plantTypeId', e.target.value)}
                 />
-              </div> 
+              </div>
 
               <InputText
                 label="Quantity *"
@@ -329,32 +338,32 @@ const handleChange = (field, value) => {
               />
 
               <div className="flex flex-col h-full items-center justify-end">
-                <IconButton 
-                  onClick={() => handleRemoveItem(index)} 
-                  label='' 
-                  size='md' 
-                  shape='pill' 
-                  disabled={form.items.length <= 1} 
-                  icon={<FiTrash />} 
+                <IconButton
+                  onClick={() => handleRemoveItem(index)}
+                  label=''
+                  size='md'
+                  shape='pill'
+                  disabled={form.items.length <= 1}
+                  icon={<FiTrash />}
                 />
               </div>
             </div>
           ))}
 
           <div className="flex justify-end items-center">
-            <IconButton 
-              onClick={handleAddItem} 
-              icon={<FiPlus />} 
-              label="Add" 
-              className="btn btn-sm" 
+            <IconButton
+              onClick={handleAddItem}
+              icon={<FiPlus />}
+              label="Add"
+              className="btn btn-sm"
             />
           </div>
 
-          
+
           <div className="flex justify-end mt-6">
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || message.type === 'error'}
               className="w-full md:w-auto"
             >
               {isLoading ? 'loading...' : 'Submit Order'}

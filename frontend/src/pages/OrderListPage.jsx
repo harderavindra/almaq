@@ -72,10 +72,10 @@ const OrderListPage = () => {
 
                 <div className="overflow-x-auto flex-1">
                     <StatusMessageWrapper
-  loading={isLoading}
-  success={message.type === 'success' ? message.text : ''}
-  error={message.type === 'error' ? message.text : ''}
-/>
+                        loading={isLoading}
+                        success={message.type === 'success' ? message.text : ''}
+                        error={message.type === 'error' ? message.text : ''}
+                    />
                     <table className="w-full rounded-xl overflow-hidden" border="0">
                         <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
                             <tr>

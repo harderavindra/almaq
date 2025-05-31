@@ -6,6 +6,7 @@ import InputText from '../common/InputText';
 import IconButton from '../common/IconButton';
 import Pagination from '../common/Pagination';
 import Button from '../common/Button';
+import LocationDropdowns from '../common/LocationDropdowns';
 
 const DepartmentsMaster = () => {
     const [data, setData] = useState([]);
@@ -30,7 +31,7 @@ const DepartmentsMaster = () => {
             { header: 'Name', key: 'name' },
             { header: 'Contact Person', key: 'contactPerson' },
             { header: 'Contact Number', key: 'contactNumber' },
-            { header: 'Address', key: 'address' },
+            { header: 'Address', key: 'address, city, taluka, district, state' },
             { header: 'Active', key: 'isActive' }
         ];
 
@@ -202,6 +203,19 @@ const DepartmentsMaster = () => {
                                 value={formData.contactNumber || ''}
                                 handleOnChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
                                 required
+                            />
+                            <LocationDropdowns
+                                onChange={(locationData) => {
+                                    console.log('Location Data:', locationData);
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        ...locationData // Directly updates state, district, taluka, city
+                                    }));
+                                }}
+                                defaultState={formData.state}
+                                defaultDistrict={formData.district}
+                                defaultTaluka={formData.taluka}
+                                defaultCity={formData.city}
                             />
                             <InputText
                                 type="text"
