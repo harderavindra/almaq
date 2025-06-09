@@ -3,7 +3,7 @@ import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import IconButton from './IconButton';
 // import LoadingSpinner from './LoadingSpinner';
 
-const DataTable = ({ columns, data, isLoading, onEdit, onDelete, emptyMessage }) => {
+const DataTable = ({ columns, data, isLoading, onEdit,isModalOpen, onDelete, emptyMessage }) => {
     if (data.length === 0) return <p className="text-gray-500 py-4">{emptyMessage}</p>;
 
     return (
@@ -19,6 +19,7 @@ const DataTable = ({ columns, data, isLoading, onEdit, onDelete, emptyMessage })
                         <th className="px-4 py-3 text-right text-xs uppercase tracking-wider">
                             Actions
                         </th>
+
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -42,6 +43,7 @@ const DataTable = ({ columns, data, isLoading, onEdit, onDelete, emptyMessage })
                                     <IconButton onClick={() => onDelete(item._id)} icon={<FiTrash2 />} label="" />
                                 </div>
                             </td>
+                            
                         </tr>
                     ))}
                 </tbody>

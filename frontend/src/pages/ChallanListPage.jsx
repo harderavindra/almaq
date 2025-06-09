@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { FiExternalLink, FiPlus, FiTrash2, FiTruck } from 'react-icons/fi';
+import { FiExternalLink, FiFile, FiPlus, FiTrash2, FiTruck } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import { hasAccess } from '../utils/permissions';
@@ -116,8 +116,10 @@ const ChallanListPage = () => {
                                     <td className="px-3 py-4 capitalize">{challan.status || 'Pending'}</td>
                                     <td className="px-3 py-4">
                                         <div className="flex gap-2">
+                                               <IconButton  label='' shape='pill' onClick={() => navigate(`/challans/${challan._id}`)}  icon={<FiFile size="18" />} >
+                                            </IconButton>
                                              {canDelete && (
-                                                 <IconButton onClick={() =>handleDelete(challan._id)} label='' variant='outline' className={'border-blue-300'} icon={<FiTrash2 />} >
+                                                <IconButton variant='danger' label='' shape='pill' onClick={() =>handleDelete(challan._id)}  icon={<FiTrash2 size="18"/>} >
                                             </IconButton>
                                                 // <button onClick={() => handleDelete(challan._id)} className="text-red-600 hover:text-red-800 cursor-pointer">
                                                 //     <FiTrash2 size={18} />
@@ -126,8 +128,7 @@ const ChallanListPage = () => {
                                             {/* <button onClick={() => handleDelete(challan._id)} className="text-red-600 hover:text-red-800">
                                                 <FiTrash2 size={18} />
                                             </button> */}
-                                            <IconButton onClick={() => navigate(`/challans/${challan._id}`)} label='' variant='outline' className={'border-blue-300'} icon={<FiExternalLink />} >
-                                            </IconButton>
+                                         
                                            
                                         </div>
                                     </td>

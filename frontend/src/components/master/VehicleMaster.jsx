@@ -20,7 +20,7 @@ const VehicleMaster = () => {
 
     const ITEMS_PER_PAGE = 5;
 
-    const columns = [
+    const columns = !isModalOpen ? [
         { header: 'Transport Name', key: 'transportName' },
         { header: 'Vehicle Number', key: 'vehicleNumber' },
         { header: 'Driver Name', key: 'driverName' },
@@ -37,6 +37,11 @@ const VehicleMaster = () => {
             key: 'isActive',
             render: item => (item.isActive ? 'Yes' : 'No')
         }
+    ]
+    :[
+         { header: 'Transport Name', key: 'transportName' },
+        { header: 'Vehicle Number', key: 'vehicleNumber' },
+        { header: 'Driver Name', key: 'driverName' },
     ];
 
     const filteredData = data.filter(item =>
@@ -146,6 +151,7 @@ const VehicleMaster = () => {
                         isLoading={isLoading}
                         onEdit={onEdit}
                         onDelete={onDelete}
+                        isModalOpen={isModalOpen}
                         emptyMessage="No vehicles found"
                     />
 
@@ -159,7 +165,7 @@ const VehicleMaster = () => {
                 {/* Modal */}
                 <div
                     className={`flex justify-center items-start transition-all duration-500 pl-20 ${
-                        isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1'
+                        isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1  h-1'
                     }`}
                 >
                     <div className="rounded-xl w-full max-w-lg relative">

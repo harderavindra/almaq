@@ -154,12 +154,32 @@ export const InvoicesList = async (req, res) => {
       grouped[dep].push(invoice);
     }
 
+    // Collect distinct month/year
+    const availableDates = await Invoice.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$invoiceDate" },
+            month: { $month: "$invoiceDate" }
+          }
+        }
+      },
+      {
+        $sort: { "_id.year": -1, "_id.month": -1 }
+      }
+    ]);
+
+    const availableMonthYear = availableDates.map((d) => ({
+      year: d._id.year,
+      month: d._id.month,
+    }));
+
     const result = Object.keys(grouped).map((dep) => ({
       department: dep,
       invoices: grouped[dep],
     }));
 
-    res.json(result);
+    res.json({ invoices: result, availableMonthYear });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

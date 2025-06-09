@@ -9,8 +9,9 @@ const sizeClasses = {
 const variantClasses = {
   primary: 'bg-blue-500 text-white hover:bg-blue-600',
   secondary: 'bg-gray-600 text-white hover:bg-gray-700',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+  danger: 'bg-red-400 text-white hover:bg-red-500',
   outline: 'border border-gray-600 text-gray-600 hover:bg-gray-100',
+  success: 'bg-green-500  text-white hover:bg-green-600',
 };
 
 const shapeClasses = {

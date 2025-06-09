@@ -32,12 +32,12 @@ setActiveTab(path && path !== 'master' ? path : 'farmers');
     }, [location]);
 
     return (
-        <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
+        <div className="flex flex-col md:flex-row  px-10 gap-10 py-10 items-start justify-start">
 
             <SidebarMaster activeTab={activeTab} />
 
 
-            <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
+            <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow overflow-hidden">
                 <h2 className="text-3xl font-bold mb-4">
                     {tabHeadings[activeTab] || 'Master Section'}
                 </h2>

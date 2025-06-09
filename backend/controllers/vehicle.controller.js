@@ -1,3 +1,4 @@
+import Challan from '../models/Challan.js';
 import Vehicle from '../models/Vehicle.js';
 
 // Create vehicle
@@ -56,12 +57,47 @@ export const updateVehicle = async (req, res) => {
 };
 
 // Delete vehicle
-export const deleteVehicle = async (req, res) => {
+export const deleteOrDeactivateVehicle = async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
-    if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
-    res.json({ message: 'Vehicle deleted successfully' });
+    const { id } = req.params;
+
+    // Check if the vehicle is used in any Challan
+    const isReferenced = await Challan.exists({ vehicleId: id });
+
+    if (isReferenced) {
+      // Soft delete (mark inactive)
+      const updatedVehicle = await Vehicle.findByIdAndUpdate(
+        id,
+        { isActive: false },
+        { new: true }
+      );
+
+      if (!updatedVehicle) {
+        return res.status(404).json({ success: false, message: 'Vehicle not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Vehicle is in use and has been marked as inactive.',
+        vehicle: updatedVehicle,
+      });
+    } else {
+      // Hard delete
+      const deletedVehicle = await Vehicle.findByIdAndDelete(id);
+
+      if (!deletedVehicle) {
+        return res.status(404).json({ success: false, message: 'Vehicle not found' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Vehicle deleted successfully.',
+        vehicle: deletedVehicle,
+      });
+    }
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Vehicle deletion error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

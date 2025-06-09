@@ -194,8 +194,8 @@ const ChallanCreatePage = () => {
           </div>
 
           {showSelector && (
-            <div className="w-screen h-screen fixed top-0 left-0 bg-black/50 z-50 flex justify-center items-center">
-              <div className="mb-2 p-10 bg-white rounded-2xl w-6xl relative">
+            <div className="w-screen h-screen p-5 fixed top-0 left-0 bg-black/50 z-50 flex justify-center items-center">
+              <div className="mb-2 p-10 min-h-full bg-white rounded-2xl w-6xl relative">
                 <button type="button" onClick={() => setShowSelector(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                   <FiX size={24} />
                 </button>

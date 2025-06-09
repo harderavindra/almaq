@@ -103,7 +103,7 @@ const OrderListPage = () => {
                                         <div className='flex gap-3'>
 
                                             <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
-                                            <IconButton label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
+                                            <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
                                         </div>
 
 

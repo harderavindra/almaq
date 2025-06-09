@@ -4,7 +4,7 @@ const InputText = ({type='text', value, name, label,autoComplete, placeholder, h
   return (
    <div className={`flex flex-col gap-1 w-full ${className}`}>
    {label && (<label>{label}</label>)}
-      <input type={type} value={value} autoComplete={autoComplete}  name={name} onChange={handleOnChange} placeholder={placeholder} disabled={disabled}  className={`border rounded-md ${disabled? "border-gray-100 px-3 py-2 focus:border-gray-100":"border-gray-400 px-3 py-2 focus:border-blue-300"}  focus:outline-0`}  />
+      <input type={type} value={value} autoComplete={autoComplete}  name={name} onChange={handleOnChange} placeholder={placeholder} disabled={disabled}  className={`border rounded-md h-10 px-3 py-2 ${disabled? "border-gray-100  focus:border-gray-100":"border-gray-400  focus:border-blue-300"}  focus:outline-0`}  />
    </div>
   )
 }

@@ -7,7 +7,7 @@ import Button from '../common/Button';
 const AdminLayout = ({ children }) => {
   const { user, logout, loading } = useAuth();
   return (
-    <div className='bg-gray-100 min-h-screen flex flex-col '>
+    <div className='bg-gray-100 min-h-screen  flex flex-col '>
       {/* Sidebar */}
       <div className='flex justify-between items-center py-4 px-10'>
         <h2>

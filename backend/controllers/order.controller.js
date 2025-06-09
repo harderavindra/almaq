@@ -7,7 +7,7 @@ import Invoice from '../models/Invoice.js';
 
 export const createOrder = async (req, res) => {
   try {
-    const { departmentId, orderRefNo, orderLetterNumber, contactPerson, contactNumber, orderDate, status, items } = req.body;
+    const { departmentId, orderRefNo, orderLetterNumber, contactPerson, contactNumber, orderDate, status } = req.body;
 
     const order = await Order.create({ 
       departmentId, 
@@ -27,15 +27,7 @@ export const createOrder = async (req, res) => {
       ],
 
     });
-    const orderItems = items.map(item => ({
-      orderId: order._id,
-      farmerId: item.farmerId,
-      plantTypeId: item.plantTypeId,
-      quantity: item.quantity,
-      pricePerUnit: item.pricePerUnit
-    }));
 
-    await OrderItem.insertMany(orderItems);
 
     res.status(201).json({ message: 'Order created successfully', orderId: order._id });
   } catch (err) {

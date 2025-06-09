@@ -44,9 +44,12 @@ const locationData = {
 const LocationDropdowns = ({
     onChange,
     defaultState = 'Maharashtra',
-    defaultDistrict = '',
+    defaultDistrict ,
     defaultTaluka = '',
-    defaultCity = ''
+    defaultCity = '',
+    className='',
+     showCityInput = true,
+     hideLabel = false
 }) => {
     const [selectedState, setSelectedState] = useState(defaultState);
     const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict);
@@ -88,10 +91,9 @@ const LocationDropdowns = ({
         : [];
 
     return (
-        <div className="flex flex-col gap-3">
-            {defaultDistrict} {selectedDistrict}
+        <div className={`flex flex-col gap-3 ${className}`}>
             <SelectDropdown
-                label="State"
+                label={hideLabel? '':"State"}
                 value={selectedState}
                 onChange={(e) => {
                     setSelectedState(e.target.value);
@@ -105,7 +107,7 @@ const LocationDropdowns = ({
 
             {selectedState && (
                 <SelectDropdown
-                    label="District"
+                    label={hideLabel? '':"District"}
                     value={selectedDistrict}
                     onChange={(e) => {
                         setSelectedDistrict(e.target.value);
@@ -119,7 +121,7 @@ const LocationDropdowns = ({
 
             {selectedDistrict && (
                 <SelectDropdown
-                    label="Taluka"
+                    label={hideLabel? '':"Taluka"}
                     value={selectedTaluka}
                     onChange={(e) => setSelectedTaluka(e.target.value)}
                     options={talukaOptions}
@@ -127,13 +129,14 @@ const LocationDropdowns = ({
                     className='w-full'
                 />
             )}
+            {showCityInput && (
             <InputText label={"City/Village"}
-                name="city"
+                name={hideLabel? '':"city"}
                 placeholder="Enter City or Village"
                 handleOnChange={(e) => { setSelectedCity(e.target.value); console.log(e.target.value) }}
                 value={selectedCity}
                 className='w-full'
-            />
+            />)}
         </div>
     );
 };

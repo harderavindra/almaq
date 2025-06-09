@@ -26,7 +26,33 @@ export const getOrderItems = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch order items.' });
   }
 };
+export const getOrderItemChallan = async (req, res) => {
+  const { departmentId } = req.query;
 
+  try {
+    if (!departmentId) {
+      return res.status(400).json({ message: 'Department ID is required' });
+    }
+
+    // First, find all orders for this department
+    const orders = await Order.find({ departmentId }).select('_id');
+    const orderIds = orders.map(order => order._id);
+
+    // Then, find relevant OrderItems
+    const orderItems = await OrderItem.find({
+      orderId: { $in: orderIds },
+      $expr: { $lt: ['$deliveredQuantity', '$quantity'] }, // not fully delivered
+    })
+      .populate('orderId')
+      .populate('farmerId')
+      .populate('plantTypeId');
+
+    res.json(orderItems);
+  } catch (error) {
+    console.error('Error fetching order items:', error);
+    res.status(500).json({ message: 'Failed to fetch order items.' });
+  }
+};
 
 // controllers/orderItemController.js
 export const updateOrderItemStatus = async (req, res) => {

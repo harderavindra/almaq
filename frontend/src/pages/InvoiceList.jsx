@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiClipboard, FiCreditCard, FiTrash } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiClipboard, FiCreditCard, FiFile, FiTrash } from 'react-icons/fi';
 
 import { FaRupeeSign, FaTrash, FaFilePdf, FaEye, FaMoneyCheck, FaMoneyBillWave } from 'react-icons/fa';
 import StatusBubbleText from '../components/common/StatusBubbleText';
@@ -17,11 +17,35 @@ const months = [...Array(12)].map((_, i) => ({
 const InvoiceList = () => {
     const navigate = useNavigate()
     const [data, setData] = useState([]);
+    const [availableDates, setAvailableDates] = useState([]);
+
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
         status: '',
     });
+
+    const minDate = availableDates.reduce((min, d) => {
+    if (!min || d.year < min.year || (d.year === min.year && d.month < min.month)) {
+        return d;
+    }
+    return min;
+}, null);
+
+const maxDate = availableDates.reduce((max, d) => {
+    if (!max || d.year > max.year || (d.year === max.year && d.month > max.month)) {
+        return d;
+    }
+    return max;
+}, null);
+
+const isPrevDisabled = !minDate ||
+    filters.year < minDate.year ||
+    (filters.year === minDate.year && filters.month <= minDate.month);
+
+const isNextDisabled = !maxDate ||
+    filters.year > maxDate.year ||
+    (filters.year === maxDate.year && filters.month >= maxDate.month);
 
     const statusColors = {
         Paid: 'success',
@@ -43,7 +67,7 @@ const InvoiceList = () => {
         'Partially Paid': 'check',
         Cheque: <FaMoneyBillWave />,
     };
- 
+
     const fetchInvoices = async () => {
         try {
             const res = await api.get('/invoices/all', {
@@ -53,10 +77,13 @@ const InvoiceList = () => {
                     status: filters.status,
                 },
             });
-            setData(res.data);
+            setData(res.data.invoices);
+            setAvailableDates(res.data.availableMonthYear);
+           
         } catch (err) {
             console.error('Error fetching invoices:', err);
         }
+
     };
 
     useEffect(() => {
@@ -71,18 +98,18 @@ const InvoiceList = () => {
         setFilters({ ...filters, month: newMonth });
     };
     const handleDelete = async (id) => {
-  if (!window.confirm('Are you sure you want to delete this invoice?')) return;
+        if (!window.confirm('Are you sure you want to delete this invoice?')) return;
 
-  try {
-    const response = await api.delete(`/invoices/${id}`); // Adjust the API route as per your backend
-    alert(response.data.message || 'Invoice deleted successfully.');
+        try {
+            const response = await api.delete(`/invoices/${id}`); // Adjust the API route as per your backend
+            alert(response.data.message || 'Invoice deleted successfully.');
 
 
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-    alert(error.response?.data?.message || 'Error deleting invoice.');
-  }
-};
+        } catch (error) {
+            console.error('Error deleting invoice:', error);
+            alert(error.response?.data?.message || 'Error deleting invoice.');
+        }
+    };
 
     return (
         <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
@@ -108,42 +135,41 @@ const InvoiceList = () => {
                             className="border border-blue-300 bg-blue-50 px-2 py-1 rounded-lg text-blue-600"
                         >
                             <option value="">Year</option>
-                            {Array.from({ length: 10 }, (_, i) => {
-                                const year = new Date().getFullYear() - i;
-                                return (
-                                    <option key={year} value={year}>
-                                        {year}
-                                    </option>
-                                );
-                            })}
+                            {[...new Set(availableDates.map(d => d.year))].map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
                         </select>
                         <button
                             type="button"
+                            disabled={isPrevDisabled}
+
                             onClick={() => handleMonthChange(-1)}
-                            className="p-2 bg-blue-50 rounded-lg cursor-pointer border border-blue-300 text-blue-500"
+                            className={`p-2 bg-blue-50 rounded-lg cursor-pointer border border-blue-300 text-blue-500 ${isPrevDisabled ? 'opacity-30' : ''}`}
                         >
                             <FiChevronLeft />
                         </button>
 
                         <select
                             value={filters.month || ''}
-                            onChange={(e) =>
-                                setFilters({ ...filters, month: parseInt(e.target.value) })
-                            }
+                            onChange={(e) => setFilters({ ...filters, month: parseInt(e.target.value) })}
                             className="border border-blue-300 bg-blue-50 px-2 py-1 rounded-lg text-blue-600"
                         >
                             <option value="">Month</option>
-                            {months.map((m) => (
-                                <option key={m.value} value={m.value}>
-                                    {m.label}
-                                </option>
-                            ))}
+                            {[...new Set(availableDates
+                                .filter(d => d.year === filters.year)
+                                .map(d => d.month))].map(month => (
+                                    <option key={month} value={month}>
+                                        {new Date(0, month - 1).toLocaleString('default', { month: 'long' })}
+                                    </option>
+                                ))}
                         </select>
 
                         <button
                             type="button"
+                                                        disabled={isNextDisabled}
+
                             onClick={() => handleMonthChange(1)}
-                            className="p-2 bg-blue-50 rounded-lg cursor-pointer border border-blue-300 text-blue-500"
+                            className={`p-2 bg-blue-50 rounded-lg cursor-pointer border border-blue-300 text-blue-500 ${isNextDisabled ? 'opacity-30' : ''}`}
                         >
                             <FiChevronRight size={16} />
                         </button>
@@ -191,12 +217,12 @@ const InvoiceList = () => {
                                                 <div className='flex gap-3 items-center'>{statusIcons[invoice.paymentMode] || '-'} {invoice.paymentMode}</div></td>
                                             <td className="p-2  gap-2">
                                                 <div className='flex gap-4'>
-                                                <IconButton icon={<FiClipboard size={18} />} label='' onClick={()=> navigate(`/view-invoice/${invoice._id}`)} title="View"></IconButton>
-                                                {
-                                                    invoice.paymentStatus !== 'Paid' &&
-                                                <IconButton icon={<FiCreditCard size={18} />} label='' onClick={()=> navigate(`/payment-invoice/${invoice._id}`)} title="View"></IconButton>
-                                                }
-<IconButton icon={<FiTrash size={18} />} label='' onClick={()=> handleDelete(invoice._id)} title="Delete"></IconButton>
+                                                    <IconButton shape='pill' icon={<FiFile size={18} />} label='' onClick={() => navigate(`/view-invoice/${invoice._id}`)} title="View"></IconButton>
+                                                    {
+                                                        invoice.paymentStatus !== 'Paid' &&
+                                                        <IconButton shape='pill' variant='success' icon={<FiCreditCard size={18} />} label='' onClick={() => navigate(`/payment-invoice/${invoice._id}`)} title="View"></IconButton>
+                                                    }
+                                                    <IconButton shape='pill' variant='danger' icon={<FiTrash size={18} />} label='' onClick={() => handleDelete(invoice._id)} title="Delete"></IconButton>
 
                                                 </div>
                                             </td>

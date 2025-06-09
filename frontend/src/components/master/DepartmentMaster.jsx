@@ -157,7 +157,7 @@ const DepartmentsMaster = () => {
 
                 {/* Modal */}
                 <div
-                    className={` flex justify-center items-start  transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1'
+                    className={` flex justify-center items-start  transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1  h-1'
                         }`}
                 >
                     <div className="  rounded-xl w-full max-w-lg relative">
@@ -225,13 +225,17 @@ const DepartmentsMaster = () => {
                                 required
                             />
 
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-2 shadow-sm bg-white w-fit">
                                 <input
                                     type="checkbox"
+                                    id="isActive"
                                     checked={formData.isActive || false}
                                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                    className="w-5 h-5 text-blue-600 rounded  cursor-pointer"
                                 />
-                                <label className="ml-2">Active</label>
+                                <label htmlFor="isActive" className="text-gray-700 text-sm cursor-pointer select-none">
+                                    Active
+                                </label>
                             </div>
                             <div className="flex justify-end gap-2 pt-4">
                                 <Button

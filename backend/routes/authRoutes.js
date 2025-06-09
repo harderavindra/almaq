@@ -32,8 +32,8 @@ router.post('/logout', logoutUser);
 router.post('/refresh', refreshToken); // this is the route you need
 // Protected Route (Admin only)
 router.get('/users', protect, isAdmin, getAllUsers);
-router.put('/update-profile-pic', updateProfilePic)
-router.post('/delete-file', deleteProfilePic);
+router.put('/update-profile-pic',protect, updateProfilePic)
+router.post('/delete-file',protect, deleteProfilePic);
 router.route('/users/:userId')
   .get(protect, getProfile)
   .put(protect, updateProfile)

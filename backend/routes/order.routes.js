@@ -6,9 +6,9 @@ import {
 } from '../middlewares/authMiddleware.js';
 import { checkRole } from '../middlewares/authMiddleware.js';
 const router = express.Router();
-router.get('/status-counts', getOrderStatusCounts);
+router.get('/status-counts',protect, getOrderStatusCounts);
 router.post('/', protect, createOrder);
-router.get('/', getOrders);
+router.get('/', protect, getOrders);
 router.get('/with-items', protect, getOrdersWithItems);
 router.put('/:id/status', protect, updateOrderStatus);
 router.get('/:id', protect, getOrderWithItemsById);

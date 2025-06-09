@@ -1,6 +1,7 @@
 import express from 'express';
 import OrderItem from '../models/OrderItem.js'; 
-import { getOrderitemInvoice, getOrderItems, updateOrderItemStatus, updateOrderItemStatusAndQuantity } from '../controllers/orederItems.controller.js';
+import { getOrderItemChallan, getOrderitemInvoice, getOrderItems, updateOrderItemStatus, updateOrderItemStatusAndQuantity } from '../controllers/orederItems.controller.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,9 +19,10 @@ router.get("/by-orders", async (req, res) => {
     res.status(500).json({ message: "Failed to load order items." });
   }
 });
-router.get("/", getOrderItems)
-router.put('/status/:id', updateOrderItemStatusAndQuantity);
-  router.put("/:id/status", updateOrderItemStatus)
-  router.get("/invoice-items", getOrderitemInvoice)
+router.get("/", protect, getOrderItems)
+router.put('/status/:id',protect, updateOrderItemStatusAndQuantity);
+  router.put("/:id/status",protect, updateOrderItemStatus)
+  router.get("/invoice-items",protect, getOrderitemInvoice)
+  router.get("/challan-items",protect, getOrderItemChallan)
 
 export default router;

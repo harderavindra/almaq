@@ -19,8 +19,10 @@ const FarmerMaster = () => {
     const [showMessage, setShowMessage] = useState({ text: '', type: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
+    const [locationFilter, setLocationFilter] = useState({});
 
-    const ITEMS_PER_PAGE = 5;
+
+    const ITEMS_PER_PAGE = 2;
 
     const columns = isModalOpen
         ? [
@@ -39,7 +41,7 @@ const FarmerMaster = () => {
 
     useEffect(() => {
         fetchData();
-    }, [currentPage]);
+    }, [currentPage, , searchTerm, locationFilter]);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -47,7 +49,9 @@ const FarmerMaster = () => {
             const response = await api.get('/farmers', {
                 params: {
                     page: currentPage,
-                    limit: ITEMS_PER_PAGE
+                    limit: ITEMS_PER_PAGE,
+                    search: searchTerm,
+                    ...locationFilter
                 }
             });
             console.log('Farmers:', response.data);
@@ -87,7 +91,7 @@ const FarmerMaster = () => {
     };
 
     const onSave = async () => {
-     
+
         try {
             if (currentItem?._id) {
                 await api.put(`/farmers/${currentItem._id}`, formData);
@@ -116,17 +120,29 @@ const FarmerMaster = () => {
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row w-full h-full">
+            <div className="flex flex-col md:flex-row w-full ">
 
 
                 <div className="w-full transition-all duration-500">
                     <div className="flex justify-between gap-10 items-center mb-4 ">
-                        <InputText
-                            placeholder="Search..."
-                            value={searchTerm}
-                            handleOnChange={(e) => setSearchTerm(e.target.value)}
-                            className="max-w-xs"
-                        />
+                        <div className='flex gap-4'>
+                            <InputText
+                                placeholder="Search..."
+                                value={searchTerm}
+                                handleOnChange={(e) => setSearchTerm(e.target.value)}
+                                className="max-w-xs mt-1"
+                            />
+                            <LocationDropdowns
+                                onChange={(locationData) => {
+                                    setLocationFilter(locationData);
+                                    setCurrentPage(1); // reset to first page
+                                }}
+                                defaultState={locationFilter.state}
+                                showCityInput={false}
+                                className='flex-row min-w-lg'
+                                hideLabel={true}
+                            />
+                        </div>
                         <IconButton
                             icon={<FiPlus />}
                             label="Add Farmer"
@@ -157,7 +173,7 @@ const FarmerMaster = () => {
 
                 {/* Modal */}
                 <div
-                    className={` flex justify-center items-start  transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1'
+                    className={` flex justify-center items-start  transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1 h-1'
                         }`}
                 >
                     <div className="  rounded-xl w-full max-w-lg relative">

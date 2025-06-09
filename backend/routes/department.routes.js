@@ -5,11 +5,13 @@ import {
   createDepartment,
   updateDepartment,
   deleteDepartment,
+  searchDepartments,
 } from '../controllers/department.controller.js';
 
 const router = express.Router();
 
 router.get('/', getDepartments);
+router.get('/search',searchDepartments);
 router.get('/:id', getDepartmentById);
 router.post('/', createDepartment);
 router.put('/:id', updateDepartment);

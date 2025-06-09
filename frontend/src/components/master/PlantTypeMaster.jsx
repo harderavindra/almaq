@@ -153,7 +153,7 @@ const PlantTypeMaster = () => {
                 </div>
 
                 {/* Modal */}
-                <div className={`flex justify-center items-start transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1'}`}>
+                <div className={`flex justify-center items-start transition-all duration-500 pl-20 ${isModalOpen ? 'opacity-100 visible w-full' : 'opacity-0 invisible w-1  h-1'}`}>
                     <div className="rounded-xl w-full max-w-lg relative">
                         <h3 className="text-xl font-semibold bg-blue-600 text-white px-6 py-3 rounded-t-lg flex justify-between items-center">
                             {currentItem ? 'Edit Plant Type' : 'Add Plant Type'}

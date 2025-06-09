@@ -16,13 +16,13 @@ const SelectDropdown = ({
     typeof optionLabel === 'function' ? optionLabel(opt) : opt[optionLabel];
 
   return (
-    <div className="mb-2">
-      <label className="block mb-1">{label}</label>
+    <div className="flex flex-col gap-1 w-full">
+      <label className="">{label}</label>
       <select
         value={value}
         name={name}
         onChange={onChange}
-        className={` capitalize border rounded-md border-gray-400 px-3 py-2 focus:border-blue-300 focus:outline-0  ${className}`}
+        className={` capitalize border rounded-md bg-white border-gray-400 px-3 py-2 h-10 focus:border-blue-300 focus:outline-0  ${className}`}
         required={required}
       >
         <option value="">{placeholder}</option>
