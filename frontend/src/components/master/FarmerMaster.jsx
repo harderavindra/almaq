@@ -22,7 +22,7 @@ const FarmerMaster = () => {
     const [locationFilter, setLocationFilter] = useState({});
 
 
-    const ITEMS_PER_PAGE = 2;
+    const ITEMS_PER_PAGE = 20;
 
     const columns = isModalOpen
         ? [
@@ -36,7 +36,7 @@ const FarmerMaster = () => {
         ];
 
     const filteredData = (data || []).filter(item =>
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.firstName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     useEffect(() => {
@@ -56,7 +56,8 @@ const FarmerMaster = () => {
             });
             console.log('Farmers:', response.data);
             setData(response.data?.data || []);
-            setTotalPages(response.data.totalPages || 1);
+            setTotalPages(response.data.pagination.totalPages || 1);
+            setCurrentPage(response.data.pagination.currentPage || 1);
         } catch (error) {
             setShowMessage({ type: 'error', text: 'Failed to fetch data' });
         } finally {
@@ -132,16 +133,20 @@ const FarmerMaster = () => {
                                 handleOnChange={(e) => setSearchTerm(e.target.value)}
                                 className="max-w-xs mt-1"
                             />
-                            <LocationDropdowns
-                                onChange={(locationData) => {
-                                    setLocationFilter(locationData);
-                                    setCurrentPage(1); // reset to first page
-                                }}
-                                defaultState={locationFilter.state}
-                                showCityInput={false}
-                                className='flex-row min-w-lg'
-                                hideLabel={true}
-                            />
+                            {!isModalOpen && (
+
+
+                                <LocationDropdowns
+                                    onChange={(locationData) => {
+                                        setLocationFilter(locationData);
+                                        setCurrentPage(1); // reset to first page
+                                    }}
+                                    defaultState={locationFilter.state}
+                                    showCityInput={false}
+                                    className='flex-row min-w-lg'
+                                    hideLabel={true}
+                                />
+                            )}
                         </div>
                         <IconButton
                             icon={<FiPlus />}
@@ -198,8 +203,9 @@ const FarmerMaster = () => {
                                 e.preventDefault();
                                 onSave();
                             }}
-                            className="space-y-4 border border-blue-300 p-10 rounded-b-lg"
+                            className="space-y-4 border border-blue-300 p-10 rounded-b-lg "
                         >
+                            <div className='grid grid-cols-2 gap-4'>
                             <InputText
                                 type="text"
                                 label="First Name"
@@ -232,6 +238,9 @@ const FarmerMaster = () => {
                                 handleOnChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
                                 required
                             />
+                            </div>
+                                                        <div className=''>
+
                             <LocationDropdowns
                                 onChange={(locationData) => {
                                     console.log('Location Data:', locationData);
@@ -244,8 +253,12 @@ const FarmerMaster = () => {
                                 defaultDistrict={formData.district}
                                 defaultTaluka={formData.taluka}
                                 defaultCity={formData.city}
+                                listStyle='grid'
                             />
-                            {formData.district}                  <InputText label="Address Line" autoComplete={"Address line"}
+                            </div>
+                                                        <div className='grid grid-cols-2 gap-4'>
+
+                            <InputText label="Address Line" autoComplete={"Address line"}
                                 type="text"
                                 value={formData.address || ''}
                                 handleOnChange={(e) => setFormData({ ...formData, address: e.target.value })} />
@@ -256,6 +269,8 @@ const FarmerMaster = () => {
                                 handleOnChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
                                 required
                             />
+                            </div>
+                            
 
                             <div className="flex justify-end gap-2 pt-4">
                                 <Button

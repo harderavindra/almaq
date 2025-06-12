@@ -100,12 +100,12 @@ const OrderViewPage = () => {
                   )}
 
 
-                   {/* ✅ Updated condition for Delivered */}
-  {items?.every(group => group.items.every(item => item.status === 'Delivered')) && order?.status === 'Approved' && (
-    <option value="Delivered">Delivered</option>
-  )}
+                  {/* ✅ Updated condition for Delivered */}
+                  {items?.every(group => group.items.every(item => item.status === 'Delivered')) && order?.status === 'Approved' && (
+                    <option value="Delivered">Delivered</option>
+                  )}
                 </select>
-                 
+
               ) : (
                 <p className="text-lg text-blue-700 font-medium capitalize">{order.status}</p>
               )}
@@ -188,27 +188,27 @@ const OrderViewPage = () => {
                   {allDelivered && (
                     <tr>
                       <td>{itemGroup.invoice?.invoiceNumber}</td>
-                      <td>{formatDate( itemGroup?.invoice?.invoiceDate)}</td>
-                      <td>{ itemGroup?.invoice?.amountReceived}- { itemGroup?.invoice?.paymentStatus}</td>
+                      <td>{formatDate(itemGroup?.invoice?.invoiceDate)}</td>
+                      <td>{itemGroup?.invoice?.amountReceived}- {itemGroup?.invoice?.paymentStatus}</td>
                       <td colSpan="6" className="px-4 py-2 text-right">
                         {hasInvoice && invoiceId ? (
                           <>
-                          <a
-                            href={`/view-invoice/${invoiceId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 font-semibold hover:underline"
-                          >
-                            View Invoice for {itemGroup.farmer?.name}
-                          </a>
-                          <a
-                            href={`/payment-invoice/${invoiceId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 font-semibold hover:underline"
-                          >
-                            Payment Invoice {itemGroup.farmer?.name}
-                          </a>
+                            <a
+                              href={`/view-invoice/${invoiceId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 font-semibold hover:underline"
+                            >
+                              View Invoice for {itemGroup.farmer?.name}
+                            </a>
+                            <a
+                              href={`/payment-invoice/${invoiceId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 font-semibold hover:underline"
+                            >
+                              Payment Invoice {itemGroup.farmer?.name}
+                            </a>
                           </>
                         ) : (
                           <Link

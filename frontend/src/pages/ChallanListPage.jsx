@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { FiExternalLink, FiFile, FiPlus, FiTrash2, FiTruck } from 'react-icons/fi';
+import { FiExternalLink, FiFile, FiPenTool, FiPlus, FiTrash2, FiTruck } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import { hasAccess } from '../utils/permissions';
@@ -108,7 +108,7 @@ const ChallanListPage = () => {
                                             <div key={item._id || i} className="flex gap-2 items-center">
                                                 <span className={`w-4 h-4 text-xs ${item.status === 'Delivered' ? "bg-green-400" : "bg-orange-400"} flex justify-center items-center rounded-full text-white text-sm`}>{i + 1}</span>
                                                 <span>
-                                                    {item.orderItemId?.farmerId?.name || 'Unknown'} {item.quantity}
+                                                    {item.orderItemId?.farmerId?.firstName || 'Unknown'} {item.quantity}
                                                 </span>
                                             </div>
                                         ))}
@@ -117,6 +117,8 @@ const ChallanListPage = () => {
                                     <td className="px-3 py-4">
                                         <div className="flex gap-2">
                                                <IconButton  label='' shape='pill' onClick={() => navigate(`/challans/${challan._id}`)}  icon={<FiFile size="18" />} >
+                                            </IconButton>
+                                               <IconButton  label='' shape='pill' onClick={() => navigate(`/challans/${challan._id}/edit`)}  icon={<FiPenTool size="18" />} >
                                             </IconButton>
                                              {canDelete && (
                                                 <IconButton variant='danger' label='' shape='pill' onClick={() =>handleDelete(challan._id)}  icon={<FiTrash2 size="18"/>} >

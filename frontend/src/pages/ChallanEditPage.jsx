@@ -1,14 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from "../api/axios";
 import { Link, useParams } from 'react-router-dom';
-import { FiPlus, FiTruck } from 'react-icons/fi';
+import { FiPlus, FiTruck, FiX } from 'react-icons/fi';
 import InputText from '../components/common/InputText';
 import Button from '../components/common/Button';
 import { hasAccess } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
+import IconButton from '../components/common/IconButton';
+import OrderItemSelector from '../components/challan/OrderItemSelector';
 
-const ChallanViewPage = () => {
+const ChallanEditPage = () => {
   const { user } = useAuth();
+  
   const canUpdate = hasAccess(user?.role, ['admin', 'manager']);
   const canDelete = hasAccess(user?.role, ['admin', 'manager']);
   const { challanId } = useParams();
@@ -16,12 +19,16 @@ const ChallanViewPage = () => {
   const [loading, setLoading] = useState(true);
   const [newDeliveredQuantities, setNewDeliveredQuantities] = useState({});
   const [selectedStatuses, setSelectedStatuses] = useState({});
+  const [newItem, setNewItem] = useState({ orderItemId: '', quantity: '' });
+    const [showSelector, setShowSelector] = useState(false);
+      const [orderItems, setOrderItems] = useState([]);
+    
 
   const fetchChallan = useCallback(async () => {
     try {
       const res = await api.get(`/challans/${challanId}`);
-      setChallan(res.data);
-      console.log('Challan fetched:', res.data);
+      setChallan(res.data.data);
+      console.log(res.data.data.items)
     } catch (err) {
       console.error('Failed to fetch challan:', err);
     } finally {
@@ -115,6 +122,30 @@ const ChallanViewPage = () => {
             </div>
           </div>
         </div>
+              <IconButton onClick={() => setShowSelector(!showSelector)} icon={<FiPlus />} className="btn btn-sm" />
+
+        {showSelector && (
+                    <div className="w-screen h-screen p-5 fixed top-0 left-0 bg-black/50 z-50 flex justify-center items-center">
+                    <div className=" bg-red-300 h-full">
+                      <div className="mb-2 p-10  h-full overflow-y-auto bg-white rounded-2xl w-6xl relative">
+                        <button type="button" onClick={() => setShowSelector(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                          <FiX size={24} />
+                        </button>
+                        <OrderItemSelector
+                          chalanItems={challan.items}
+                          challanId={challan._id}
+                          onItemsSelected={(items) => {
+                            setForm(prev => ({
+                              ...prev,
+                              items: [...prev.items, ...items]
+                            }));
+                            setShowSelector(false);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    </div>
+                  )}
 
         <h3 className="text-lg font-medium mb-2 mt-6">Delivered Items</h3>
         <table className="w-full rounded-xl overflow-hidden">
@@ -132,20 +163,20 @@ const ChallanViewPage = () => {
           <tbody>
             {challan.items.map((item, index) => {
               const orderItem = item.orderItemId || {};
-              const farmer = orderItem.farmerId || {};
-              const plant = orderItem.plantTypeId || {};
-              const orderQty = orderItem.quantity || 0;
+              const farmer = item.farmer || {};
+              const plant = item.plantType || {};
+              const orderQty = item.challanQuantity || 0;
               const status = item.status || 'n/a';
 
 
 
 
               return (
-                <tr key={item._id}>
+                <tr key={item.orderItemId}>
                   <td className="px-3 py-4">{index + 1}</td>
                   <td className="px-3 py-4">{farmer.firstName || 'Unknown'}</td>
                   <td className="px-3 py-4">{plant.name || 'N/A'}</td>
-                  <td className="px-3 py-4">{item.quantity}</td>
+                  <td className="px-3 py-4">{item.quantity}/ {item.challanQuantity}</td>
                   <td className="px-3 py-4">
                     {item.orderItemId.pricePerUnit}
                   </td>
@@ -161,7 +192,7 @@ const ChallanViewPage = () => {
                           {canUpdate  && ( 
                           <Button size='sm' width='auto'
 
-                            onClick={() => handleStatusUpdate(orderItem._id, 'Delivered', orderQty)}
+                            onClick={() => handleStatusUpdate(item.orderItemId, 'Delivered', orderQty)}
                           >
                             Confirm Delivery
                           </Button>
@@ -185,4 +216,4 @@ const ChallanViewPage = () => {
   );
 };
 
-export default ChallanViewPage;
+export default ChallanEditPage;

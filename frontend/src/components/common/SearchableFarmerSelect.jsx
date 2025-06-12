@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import SelectDropdown from './SelectDropdown';
 import LocationDropdowns from './LocationDropdowns';
 import { FiPlus, FiUser } from 'react-icons/fi';
-const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, district }) => {
+const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, district, taluka,disabled }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -12,7 +12,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
   const [locationFilter, setLocationFilter] = useState({
     state: 'Maharashtra',
     district: district,
-    taluka: '',
+    taluka: taluka,
     city: '',
   });
   const dropdownRef = useRef(null);
@@ -28,7 +28,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
         }
       });
       setSuggestions(res.data.data);
-      console.log("res", res.data.data)
+        console.log("res2", locationFilter.taluka)
 
     } catch (err) {
       console.error('Error fetching farmers:', err);
@@ -47,8 +47,9 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
     setLocationFilter(prev => ({
       ...prev,
       district: district || '',
+      taluka: taluka || '',
     }));
-  }, [district]);
+  }, [district, taluka]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -72,10 +73,12 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
       <input
         type="text"
         value={searchTerm}
+        
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search Farmer..."
-        className="border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0"
-        onFocus={() => setShowDropdown2(true)}
+        className={`border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0 ${disabled? 'opacity-10':''}`}
+        onFocus={() => {setShowDropdown2(true); setSearchTerm('');}}
+        disabled={disabled}
       />
       {
         showDropdown2 && (
@@ -89,6 +92,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
                 {suggestions.map((farmer, i) => (
                   <li
                     key={farmer._id}
+                   
                     onClick={() => {
                       onChange(farmer._id);
                       setSearchTerm(farmer.firstName);

@@ -6,7 +6,7 @@ const challanItemSchema = new mongoose.Schema({
     ref: 'OrderItem',
     required: true
   },
-  quantity: {
+  challanQuantity: {
     type: Number,
     required: true
   },
@@ -26,10 +26,11 @@ const challanSchema = new mongoose.Schema({
   routeDetails: { type: String },
   items: {
     type: [challanItemSchema],
-    validate: [arr => arr.length > 0, 'Challan must contain at least one item']
   },
-  notes: { type: String }
-},{
+  notes: { type: String },
+  status: { type: String, default: "Draft" },
+
+}, {
   timestamps: true
 });
 

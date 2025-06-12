@@ -4,7 +4,7 @@ import api from '../api/axios';
 import OrderSidebar from '../components/layout/OrderSidebar';
 import Pagination from '../components/Pagination';
 import IconButton from '../components/common/IconButton';
-import { FiFile, FiTrash } from 'react-icons/fi';
+import { FiFile, FiPenTool, FiTrash } from 'react-icons/fi';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 
 const OrderListPage = () => {
@@ -103,6 +103,7 @@ const OrderListPage = () => {
                                         <div className='flex gap-3'>
 
                                             <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
+                                            <IconButton  label='' shape='pill' onClick={() => navigate(`/orders/${o._id}/edit`)} icon={<FiPenTool size="18" />} />
                                             <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
                                         </div>
 

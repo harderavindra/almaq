@@ -45,21 +45,24 @@ const LocationDropdowns = ({
     onChange,
     defaultState = 'Maharashtra',
     defaultDistrict ,
-    defaultTaluka = '',
+    defaultTaluka ,
     defaultCity = '',
     className='',
      showCityInput = true,
-     hideLabel = false
+     hideLabel = false,
+     listStyle='flex'
 }) => {
     const [selectedState, setSelectedState] = useState(defaultState);
     const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict);
     const [selectedTaluka, setSelectedTaluka] = useState(defaultTaluka);
     const [selectedCity, setSelectedCity] = useState(defaultCity);
+    const listClass =listStyle == 'flex' ? 'flex flex-col' : 'grid grid-cols-2';
 
     useEffect(() => {
         setSelectedState(defaultState);
         setSelectedDistrict(defaultDistrict);
         setSelectedTaluka(defaultTaluka);
+        console.log(defaultTaluka)
         setSelectedCity(defaultCity);
     }, [defaultState, defaultDistrict, defaultTaluka, defaultCity]);
     useEffect(() => {
@@ -91,7 +94,8 @@ const LocationDropdowns = ({
         : [];
 
     return (
-        <div className={`flex flex-col gap-3 ${className}`}>
+        <div className={`${listClass} gap-3 ${className} w-full`}>
+            
             <SelectDropdown
                 label={hideLabel? '':"State"}
                 value={selectedState}

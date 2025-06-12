@@ -21,6 +21,8 @@ import ViewInvoicePage from './pages/ViewInvoicePage';
 import PrintLayout from './components/layout/PrintLayout.';
 import UpdatePayment from './pages/UpdatePayment';
 import InvoiceList from './pages/InvoiceList';
+import OrderEditPage from './pages/OrderEditPage';
+import ChallanEditPage from './pages/challanEditPage';
 
 function App() {
   return (
@@ -57,9 +59,11 @@ function App() {
               <Route path="/add-order" element={<OrderCreatePage />} />
               <Route path="/orders" element={<OrderListPage />} />
               <Route path="/orders/:id" element={<OrderViewPage />} />
+              <Route path="/orders/:orderId/edit" element={<OrderEditPage />} />
               <Route path="/challan" element={<DeliveredChalanPage />} />
               <Route path="/challans" element={<ChallanListPage />} />
               <Route path="/challans/:challanId" element={<ChallanViewPage />} />
+              <Route path="/challans/:challanId/edit" element={<ChallanEditPage />} />
               <Route path="/master/:tab?" element={<MasterPage />} />
               <Route path="/download" element={<DeliveredChalanPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />

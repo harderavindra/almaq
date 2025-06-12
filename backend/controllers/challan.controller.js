@@ -7,82 +7,125 @@ import OrderItem from '../models/OrderItem.js';
 import Vehicle from '../models/Vehicle.js';
 
 export const createChallan = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  console.log("Challan creation request body:", req.body);
   try {
-    const { vehicleId, challanNo, dispatchDate, routeDetails, note, items } = req.body;
+    const { vehicleId, challanNo, dispatchDate, routeDetails, note } = req.body;
 
-    // Step 1: Create Challan
+
     const challan = new Challan({
       vehicleId,
       challanNo,
       dispatchDate,
       note,
       routeDetails,
-      items,
+      items: [],
     });
 
-    await challan.save({ session });
-
-    // Step 2: Update each order item
-    for (const item of items) {
-      const { orderItemId, quantity } = item;
-
-      const orderItem = await OrderItem.findById(orderItemId).session(session);
-      if (!orderItem) throw new Error(`OrderItem ${orderItemId} not found`);
-
-      // Update delivered quantity and challan reference
-      const qty = Number(quantity);
-      // orderItem.deliveredQuantity += qty;
-      orderItem.challanIds.push(challan._id);
-
-      // // Optional: Mark as Delivered if fully delivered
-      // if (orderItem.deliveredQuantity >= orderItem.quantity) {
-      //   orderItem.status = 'Delivered';
-      // }
-
-      await orderItem.save({ session });
-    }
-
-    // Step 3: Commit transaction
-    await session.commitTransaction();
-    session.endSession();
+    await challan.save();
+    console.log(req.body)
 
     res.status(201).json({ message: 'Challan created successfully', challan });
   } catch (error) {
+    console.error("Error creating empty challan:", error);
+    res.status(500).json({ message: 'Failed to create challan' });
+  }
+};
+
+export const addItemsToChallan = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { challanId, items } = req.body;
+
+    const challan = await Challan.findById(challanId).session(session);
+    if (!challan) {
+      throw new Error('Challan not found');
+    }
+
+    for (const { orderItemId, challanQuantity } of items) {
+      const orderItem = await OrderItem.findById(orderItemId).session(session);
+      if (!orderItem) throw new Error(`OrderItem ${orderItemId} not found`);
+
+      // Push challan ID to order item if not already present
+      if (!orderItem.challanIds.includes(challan._id)) {
+        orderItem.challanIds.push(challan._id);
+        await orderItem.save({ session });
+      }
+
+      // Check if the orderItemId already exists in the challan
+      const existingItem = challan.items.find(item =>
+        item.orderItemId.toString() === orderItemId
+      );
+
+      if (existingItem) {
+        // Update existing item's quantity
+        existingItem.challanQuantity += challanQuantity;
+      } else {
+        // Add new item
+        challan.items.push({ orderItemId, challanQuantity });
+      }
+    }
+
+    await challan.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: 'Items added/updated in challan successfully',
+      challan
+    });
+  } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    throw error;
+    console.error('Error adding items to challan:', error);
+    res.status(500).json({ message: 'Failed to add items to challan' });
   }
 };
 
 export const getChallanById = async (req, res) => {
-  try {
+   try {
     const { id } = req.params;
-    const challanBase = await Challan.findById(id);
+
     const challan = await Challan.findById(id)
-      .populate('vehicleId', 'transportName vehicleNumber driverName driverContact')
-      .populate({
+      .populate('vehicleId')
+     .populate({
         path: 'items.orderItemId',
         populate: [
-          { path: 'farmerId', select: 'name contact' },
-          { path: 'plantTypeId', select: 'name' },
-          { path: 'orderId', select: 'orderRefNo orderDate' }
+          { path: 'farmerId', select: 'firstName lastName' }, // Adjust fields as needed
+          { path: 'plantTypeId', select: 'name variety' }
         ]
-      });
-    // console.log("Challan ID:", id);
-    // console.log("Challan challanBase:", challanBase);
+      })
+      .lean();
 
     if (!challan) {
-      return res.status(404).json({ message: 'Challan not found' });
+      return res.status(404).json({ success: false, message: 'Challan not found' });
     }
-    // console.log("Challan details:", challan);
 
-    res.status(200).json(challan);
-  } catch (error) {
-    console.error('Error fetching challan by ID:', error);
-    res.status(500).json({ message: 'Failed to retrieve challan' });
+    // Calculate total challan quantity
+    const totalChallanQuantity = challan.items.reduce((sum, item) => {
+      return sum + item.challanQuantity;
+    }, 0);
+
+    return res.json({
+      success: true,
+      data: {
+        ...challan,
+        items: challan.items.map(item => ({
+          orderItemId: item.orderItemId?._id || item.orderItemId,
+          farmer: item.orderItemId?.farmerId || null,
+          plantType: item.orderItemId?.plantTypeId || null,
+          challanQuantity: item.challanQuantity,
+          status: item.status,
+          quantity:item.orderItemId?.quantity
+          
+        })),
+        totalChallanQuantity
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching challan:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -95,10 +138,11 @@ export const getAllChallans = async (req, res) => {
       })
       .populate({
         path: 'items.orderItemId',
-        populate: {
-          path: 'farmerId plantTypeId',
-          select: 'name',
-        },
+        populate: [
+          { path: 'farmerId', select: 'firstName  lastNamecontact' },
+          { path: 'plantTypeId', select: 'name' },
+          { path: 'orderId', select: 'orderRefNo orderDate' }
+        ]
       })
       .sort({ createdAt: -1 }); // Optional: latest first
 
@@ -140,18 +184,18 @@ export const updateChallanItemDeliveryStatus = async (req, res) => {
     if (!item) {
       return res.status(404).json({ message: 'Challan item not found' });
     }
-    console.log("Item:", item);
+
     if (item.status === 'Delivered') {
       return res.status(400).json({ message: 'Item already marked as Delivered' });
     }
 
-    console.log("Item:", item);
     const orderItem = await OrderItem.findById(item.orderItemId);
     if (!orderItem) {
       return res.status(404).json({ message: 'Associated order item not found' });
     }
-console.log("Order Item:", orderItem);
-    const updatedDeliveredQty = (orderItem.deliveredQuantity || 0) + item.quantity;
+
+    // ✅ Correct property: item.challanQuantity instead of item.quantity
+    const updatedDeliveredQty = (orderItem.deliveredQuantity || 0) + item.challanQuantity;
     const cappedDeliveredQty = Math.min(updatedDeliveredQty, orderItem.quantity);
 
     let newStatus = 'Pending';
@@ -160,18 +204,24 @@ console.log("Order Item:", orderItem);
     } else if (cappedDeliveredQty > 0) {
       newStatus = 'Partially Delivered';
     }
-console.log("Capped Delivered Quantity:", cappedDeliveredQty);
+
     await OrderItem.findByIdAndUpdate(item.orderItemId, {
       deliveredQuantity: cappedDeliveredQty,
       status: newStatus,
     });
-console.log("Order Item Updated:", orderItem);
+
     item.status = 'Delivered';
     await challan.save();
 
-    return res.status(200).json({ message: 'Challan item marked as Delivered', challan });
+    return res.status(200).json({
+      message: 'Challan item marked as Delivered',
+      challan,
+    });
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to update delivery status', error: err.message });
+    return res.status(500).json({
+      message: 'Failed to update delivery status',
+      error: err.message,
+    });
   }
 };
 
@@ -225,7 +275,7 @@ export const getDeliveredChallanItems = async (req, res) => {
         group.totalPrice += price;
       }
     }
-console.log("Grouped Delivered Items:", Array.from(grouped.values()));
+    console.log("Grouped Delivered Items:", Array.from(grouped.values()));
     res.json({ items: Array.from(grouped.values()) });
   } catch (error) {
     console.error('Error fetching delivered challan items:', error);

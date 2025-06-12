@@ -28,6 +28,7 @@ const IconButton = ({
   shape = 'rounded',
   variant = 'primary',
   className = '',
+  disabled=false
 }) => {
   const sizeClass = sizeClasses[size] || sizeClasses.md;
   const shapeClass = shapeClasses[shape] || shapeClasses.rounded;
@@ -36,8 +37,9 @@ const IconButton = ({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`flex items-center justify-center gap-2  transition cursor-pointer
-                  ${sizeClass} ${shapeClass} ${variantClasses[variant]} ${className}`}
+                  ${sizeClass} ${shapeClass} ${variantClasses[variant]} ${className} ${disabled? 'opacity-30':''}`}
     >
       {icon}
       {label}

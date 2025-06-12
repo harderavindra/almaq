@@ -30,21 +30,21 @@ const OrderCreatePage = () => {
     orderLetterNumber: '',
     contactPerson: '',
     contactNumber: '',
-    
+
   });
   const [message, setMessage] = useState({ type: '', text: '' });
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [deptRes,orderNumberRes] = await Promise.all([
+        const [deptRes, orderNumberRes] = await Promise.all([
           api.get('/departments'),
           api.get('/utility/generate-number?type=ORD')
         ]);
 
         setDepartments(deptRes.data.data);
-       
-        setForm(prev => ({ ...prev, orderRefNo: orderNumberRes.data.number, orderDate:new Date().toISOString().split('T')[0] }));
+
+        setForm(prev => ({ ...prev, orderRefNo: orderNumberRes.data.number, orderDate: new Date().toISOString().split('T')[0] }));
         setMessage({ type: 'success', text: 'Data loaded successfully' });
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -57,9 +57,9 @@ const OrderCreatePage = () => {
     fetchData();
   }, []);
 
-  
 
-  
+
+
   const handleChange = (field, value) => {
     if (field === 'departmentId') {
 
@@ -92,7 +92,7 @@ const OrderCreatePage = () => {
       return false;
     }
 
-    
+
 
     return true;
   };
@@ -106,27 +106,15 @@ const OrderCreatePage = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      await api.post('/orders', form);
+      const response = await api.post('/orders', form);
       setMessage({ type: 'success', text: 'Order created successfully' });
 
-      // Get new order reference number
-      const response = await api.get('/utility/generate-number?type=ORD');
-
-      // Reset form with new reference number
-      setForm({
-        departmentId: '',
-        orderDate: '',
-        orderRefNo: response.data.number,
-        orderLetterNumber: '',
-        contactPerson: '',
-        contactNumber: '',
-      
-      });
-          const newOrderId = response.data.orderId;
+      const newOrderId = response.data.orderId;
 
       navigate(`/orders/${newOrderId}/edit`, {
-      state: { successMessage: 'Order created as draft. Add farmers now.' },
-    });
+        state: { successMessage: 'Order created as draft. Add farmers now.' },
+      });
+
 
     } catch (error) {
       console.error(error);
@@ -205,7 +193,7 @@ const OrderCreatePage = () => {
               handleOnChange={(e) => handleChange('contactNumber', e.target.value)}
             />
           </div>
-           <div className="flex justify-end mt-6">
+          <div className="flex justify-end mt-6">
             <Button
               type="submit"
               disabled={isLoading || message.type === 'error'}
@@ -215,14 +203,14 @@ const OrderCreatePage = () => {
             </Button>
           </div>
 
-      
-    
 
-         
+
+
+
         </form>
       </div>
 
-    
+
     </div>
   );
 };
