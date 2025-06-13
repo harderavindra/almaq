@@ -21,7 +21,6 @@ export const createChallan = async (req, res) => {
     });
 
     await challan.save();
-    console.log(req.body)
 
     res.status(201).json({ message: 'Challan created successfully', challan });
   } catch (error) {
@@ -84,16 +83,17 @@ export const addItemsToChallan = async (req, res) => {
 };
 
 export const getChallanById = async (req, res) => {
-   try {
+  try {
     const { id } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
     const challan = await Challan.findById(id)
       .populate('vehicleId')
-     .populate({
+      .populate({
         path: 'items.orderItemId',
         populate: [
           { path: 'farmerId', select: 'firstName lastName' }, // Adjust fields as needed
-          { path: 'plantTypeId', select: 'name variety' }
+          { path: 'plantTypeId', select: 'name ratePerUnit' }
         ]
       })
       .lean();
@@ -107,20 +107,44 @@ export const getChallanById = async (req, res) => {
       return sum + item.challanQuantity;
     }, 0);
 
+    const uniqueFarmerIds = new Set(
+      challan.items.map(item => item.orderItemId?.farmerId?._id?.toString() || item.orderItemId?.farmerId?.toString())
+    );
+    const totalFarmers = uniqueFarmerIds.size;
+
+    const totalAmount = challan.items.reduce((sum, item) => {
+      const price = item.orderItemId?.pricePerUnit || 0;
+      return sum + item.challanQuantity * price;
+    }, 0);
+
+    // Pagination logic
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit, 10);
+
+    const paginatedItems = challan.items.slice(startIndex, endIndex).map(item => ({
+      orderItemId: item.orderItemId?._id || item.orderItemId,
+      farmer: item.orderItemId?.farmerId || null,
+      plantType: item.orderItemId?.plantTypeId || null,
+      challanQuantity: item.challanQuantity,
+      status: item.status,
+      quantity: item.orderItemId?.quantity,
+      pricePerUnit: item.orderItemId?.pricePerUnit || 0,
+    }));
+
     return res.json({
       success: true,
       data: {
         ...challan,
-        items: challan.items.map(item => ({
-          orderItemId: item.orderItemId?._id || item.orderItemId,
-          farmer: item.orderItemId?.farmerId || null,
-          plantType: item.orderItemId?.plantTypeId || null,
-          challanQuantity: item.challanQuantity,
-          status: item.status,
-          quantity:item.orderItemId?.quantity
-          
-        })),
-        totalChallanQuantity
+        items: paginatedItems,
+        totalChallanQuantity,
+        totalFarmers,
+        totalAmount,
+         pagination: {
+          totalItems: challan.items.length,
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(challan.items.length / limit),
+          perPage: parseInt(limit),
+        }
       }
     });
   } catch (err) {
@@ -131,22 +155,49 @@ export const getChallanById = async (req, res) => {
 
 export const getAllChallans = async (req, res) => {
   try {
-    const challans = await Challan.find()
+
+       const { status } = req.query;
+    const query = status ? { status } : {};
+    const challans = await Challan.find(query)
       .populate({
         path: 'vehicleId',
         select: 'transportName vehicleNumber driverName driverContact',
       })
       .populate({
         path: 'items.orderItemId',
-        populate: [
-          { path: 'farmerId', select: 'firstName  lastNamecontact' },
-          { path: 'plantTypeId', select: 'name' },
-          { path: 'orderId', select: 'orderRefNo orderDate' }
-        ]
+        select: 'farmerId quantity pricePerUnit',
       })
-      .sort({ createdAt: -1 }); // Optional: latest first
+      .sort({ createdAt: -1 });
 
-    res.status(200).json(challans);
+    const enrichedChallans = challans.map((challan) => {
+      const summary = {
+        totalFarmers: new Set(), // Use Set to ensure uniqueness
+        totalQuantity: 0,
+        totalPrice: 0,
+      };
+
+      challan.items.forEach(({ orderItemId, challanQuantity }) => {
+        if (!orderItemId) return;
+
+        summary.totalQuantity += challanQuantity;
+        summary.totalPrice += challanQuantity * (orderItemId.pricePerUnit || 0);
+
+        if (orderItemId.farmerId) {
+          summary.totalFarmers.add(orderItemId.farmerId.toString());
+        }
+      });
+
+      return {
+        ...challan.toObject(),
+        summary: {
+          totalFarmers: summary.totalFarmers.size,
+          totalQuantity: summary.totalQuantity,
+          totalPrice: summary.totalPrice,
+        },
+      };
+    });
+
+    res.status(200).json(enrichedChallans);
   } catch (err) {
     console.error('Error fetching challans:', err);
     res.status(500).json({ message: 'Failed to fetch challans' });
@@ -280,5 +331,48 @@ export const getDeliveredChallanItems = async (req, res) => {
   } catch (error) {
     console.error('Error fetching delivered challan items:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+export const updateChallanStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['Draft', 'Issued', 'Delivered', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const updatedChallan = await Challan.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedChallan) {
+      return res.status(404).json({ message: 'Challan not found' });
+    }
+
+    res.status(200).json(updatedChallan);
+  } catch (err) {
+    console.error('Failed to update challan status:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const getChallanStatusCounts = async (req, res) => {
+  try {
+    const statuses = ['Draft', 'Issued', "Delivered", "Cancelled"];
+    const counts = {};
+
+    for (const status of statuses) {
+      counts[status] = await Challan.countDocuments({ status });
+    }
+
+    res.json(counts);
+  } catch (err) {
+    console.error('Error fetching challan status counts:', err);
+    res.status(500).json({ error: 'Failed to fetch challan status counts' });
   }
 };

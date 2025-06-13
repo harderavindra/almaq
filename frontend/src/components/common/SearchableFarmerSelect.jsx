@@ -109,7 +109,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
               <p>No farmer found</p></div>)
             }
             <div className='flex flex-col  border-l border-gray-200 px-5 py-2 min-w-50 min-full'>
-              <button
+              {/* <button
                 onClick={() => {
                   setSearchTerm('');
                   onAddNewFarmer();
@@ -118,7 +118,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
                 className="px-4 py-1 bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-100 flex items-center gap-3 rounded-md mb-2 w-full"
               >
                 <FiPlus /> Add New
-              </button>
+              </button> */}
               <LocationDropdowns
                 className={''}
                 onChange={(locationData) => {

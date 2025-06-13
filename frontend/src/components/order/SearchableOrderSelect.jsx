@@ -74,7 +74,7 @@ const SearchableOrderSelect = ({ label = 'Orders', onChange }) => {
                   key={ordr._id}
                   onClick={() => {
                     onChange(ordr._id, ordr);
-                    setSearchTerm(ordr.name);
+                    setSearchTerm(ordr.orderRefNo || '');
                     setShowDropdown(false);
                   }}
                   className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-l-4 border-white hover:border-blue-500 flex items-start gap-2"

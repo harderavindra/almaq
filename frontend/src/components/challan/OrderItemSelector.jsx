@@ -1,71 +1,61 @@
 import React, { useEffect, useState } from 'react';
-import SearchableDepartmentSelect from '../order/SearchableDepartmentSelect';
-import api from '../../api/axios';
-import InputText from '../common/InputText';
-import Pagination from '../Pagination';
 import SearchableOrderSelect from '../order/SearchableOrderSelect';
+import api from '../../api/axios';
+import Pagination from '../Pagination';
 
 const OrderItemSelector = ({ challanId = "test", chalanItems }) => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [checkAllExisting, setCheckAllExisting] = useState(false);
   const [checkAllAvailable, setCheckAllAvailable] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState({});
-  const [orderItems, setOrderItems] = useState([]);
   const [order, setOrder] = useState();
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
   const [itemQuantities, setItemQuantities] = useState({});
-  const [existingChallanItems, setExistingChallanItems] = useState(chalanItems);
+  const [existingChallanItems, setExistingChallanItems] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
 
-  const ITEMS_PER_PAGE = 10;
+  const [existingPage, setExistingPage] = useState(1);
+  const [availablePage, setAvailablePage] = useState(1);
+
+  const [existingPagination, setExistingPagination] = useState({ totalPages: 1 });
+  const [availablePagination, setAvailablePagination] = useState({ totalPages: 1 });
+const [availableSearch, setAvailableSearch] = useState('');
+const [existingSearch, setExistingSearch] = useState('');
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
-    if (selectedOrder.departmentId) {
-      fetchOrderItems(selectedOrder.orderId, currentPage);
+    if (selectedOrder.orderId) {
+      fetchOrderItems(selectedOrder.orderId, existingPage, availablePage);
     }
-  }, [currentPage]);
+  }, [existingPage, availablePage]);
 
-  const fetchOrderItems = async (orderId, page = 1) => {
+  const fetchOrderItems = async (orderId, existingPage = 1, availablePage = 1) => {
     try {
       const { data } = await api.get(`/orderItems/challan-items`, {
         params: {
           orderId,
-          page,
+          challanId,
           limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
+          existingPage,
+          availablePage,
+  existingSearch,
+    availableSearch
         },
       });
 
-      const items = data.items || [];
-      const existing = [];
-      const available = [];
-
-      items.forEach((item) => {
-        if (item.challanIds?.includes(challanId)) {
-          existing.push(item);
-        } else {
-          available.push(item);
-        }
-      });
       setOrder(data.order);
-      setOrderItems(items);
-      setExistingChallanItems(existing);
-      setAvailableItems(available);
-      setTotalPages(data.pagination?.totalPages || 1);
-      setCurrentPage(data.pagination?.currentPage || 1);
+      setExistingChallanItems(data.existingItems || []);
+      setAvailableItems(data.availableItems || []);
+      setExistingPagination(data.existingPagination || { totalPages: 1 });
+      setAvailablePagination(data.availablePagination || { totalPages: 1 });
+      setExistingPage(data.existingPagination?.currentPage || 1);
+      setAvailablePage(data.availablePagination?.currentPage || 1);
+      console.log('data.existingItems',data, challanId)
     } catch (error) {
       console.error('Failed to fetch items:', error);
     }
   };
 
   const handleUpdateItems = async () => {
-    if (!challanId) {
-      alert("Challan ID is missing.");
-      return;
-    }
-
     const itemsToSend = selectedItems
       .map((id) => {
         const qty = itemQuantities[id];
@@ -84,8 +74,8 @@ const OrderItemSelector = ({ challanId = "test", chalanItems }) => {
         challanId,
         items: itemsToSend,
       });
-      console.log('Items added successfully.', data);
-      fetchOrderItems(selectedOrder.orderId, currentPage);
+
+      fetchOrderItems(selectedOrder.orderId, existingPage, availablePage);
       setSelectedItems([]);
       setItemQuantities({});
       setCheckAllAvailable(false);
@@ -96,260 +86,210 @@ const OrderItemSelector = ({ challanId = "test", chalanItems }) => {
     }
   };
 
+  const renderTable = (items, checkAll, setCheckAll, type, currentPage, itemsPerPage) => (
+    <table className="w-full bg-white text-sm text-left rounded-lg">
+      <thead className="bg-blue-100 border-b border-blue-300 text-blue-600">
+        <tr>
+          <th className="px-4 py-2">#</th>
+          <th className="px-4 py-2">Farmer</th>
+          <th className="px-4 py-2">QTY</th>
+          <th className="px-4 py-2 text-center">
+            <input
+              type="checkbox"
+              className="w-5 h-5"
+              checked={checkAll}
+              disabled={items.every(item => item.quantity - item.totalChallanQuantity <= 0)}
+              onChange={(e) => {
+                const isChecked = e.target.checked;
+                setCheckAll(isChecked);
+
+                if (isChecked) {
+                  const selectable = items.filter(item => item.quantity - item.totalChallanQuantity > 0);
+                  const ids = selectable.map(item => item._id);
+                  setSelectedItems(ids);
+
+                  const updatedQuantities = {};
+                  selectable.forEach(item => {
+                    const remaining = item.quantity - item.totalChallanQuantity;
+                    updatedQuantities[item._id] = itemQuantities[item._id] ?? remaining;
+                  });
+
+                  setItemQuantities(prev => ({ ...prev, ...updatedQuantities }));
+                } else {
+                  setSelectedItems([]);
+                }
+              }}
+            />
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item, index) => {
+          const remaining = item.quantity - item.totalChallanQuantity;
+          const isDisabled = remaining <= 0;
+ const isInChallan = item.challanIds.includes(challanId);
+          return (
+            
+            <tr key={item._id} className={` ${selectedItems.includes(item._id) ? 'bg-blue-100/30 border-b border-blue-200':'even:bg-gray-100/70'}`}>
+              <td className="px-4 py-2">
+<span className={`w-5 h-5 ${isInChallan ? 'bg-green-300 text-green-800' : 'bg-blue-100 text-blue-800'} flex items-center justify-center rounded-full font-semibold text-xs`}>
+
+                {(currentPage - 1) * itemsPerPage + index + 1}
+                </span>
+                </td>
+                <td className="px-4 py-2">
+ {item.farmerId?.firstName || '-'} {item.farmerId?.lastName || '-'} | {item.plantTypeId?.name || '-'} <br />
+                Total: {item.quantity} / {item.totalChallanQuantity}
+              </td>
+              <td className="px-4 py-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={remaining}
+                  disabled={!selectedItems.includes(item._id) || isDisabled}
+                  value={
+                    itemQuantities[item._id] !== undefined
+                      ? itemQuantities[item._id]
+                      : remaining
+                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    setItemQuantities(prev => ({
+                      ...prev,
+                      [item._id]: isNaN(value) ? '' : value,
+                    }));
+                  }}
+                  className={`border px-2 py-1 rounded w-20 ${!selectedItems.includes(item._id) || isDisabled ? 'opacity-40 pointer-events-none bg-gray-100 border-gray-200' : 'bg-white border-blue-400'
+                    }`}
+                />
+              </td>
+              <td className="px-4 py-2 text-center">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5"
+                  checked={selectedItems.includes(item._id)}
+                  disabled={isDisabled}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    if (isChecked) {
+                      setSelectedItems([...selectedItems, item._id]);
+                      setItemQuantities(prev => ({
+                        ...prev,
+                        [item._id]: prev[item._id] ?? remaining,
+                      }));
+                    } else {
+                      setSelectedItems(selectedItems.filter(id => id !== item._id));
+                      setItemQuantities(prev => {
+                        const updated = { ...prev };
+                        delete updated[item._id];
+                        return updated;
+                      });
+                      if (type === 'existing') setCheckAllExisting(false);
+                      else setCheckAllAvailable(false);
+                    }
+                  }}
+                />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+
   return (
-    <div className="relative min-h-screen ">
-      <div className='flex gap-20 items-center '>
-        <div className=" w-full">
+    <div className="min-h-screen">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-20 items-start md:items-center mb-6">
+        <div className="w-full md:w-1/2">
           <SearchableOrderSelect
             label=""
-            onChange={async (id, deptObj) => {
+            onChange={async (id) => {
               setSelectedOrder({ orderId: id });
-              setCurrentPage(1);
-              await fetchOrderItems(id, 1);
+              setExistingPage(1);
+              setAvailablePage(1);
+              await fetchOrderItems(id, 1, 1);
             }}
           />
         </div>
-        <div className="w-full">
-          Selected: <span className="font-semibold">{order?.orderRefNo || 'None'}</span>
+        <div className="w-full md:w-1/2">
+          <span className="text-gray-600">Selected:</span>{' '}
+          <span className="font-semibold">{order?.orderRefNo || 'Please select an order'}</span>
         </div>
       </div>
-      <div className='flex gap-10'>
-        <div className='flex flex-col gap-5 w-full'>
 
-          {/* Existing Challan Items Table */}
-          <div className="mt-4 overflow-x-auto border border-gray-300 w-full rounded-2xl">
-            <button onClick={handleUpdateItems} className="mb-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Update
-            </button>
+      {order && (
+        <div className="flex gap-10">
+          {/* Challan Items */}
+          <div className="w-full border border-blue-300 rounded-2xl p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-semibold text-gray-800">Challan Items ({existingPagination.totalItems})</h2>
+              <button
+                onClick={handleUpdateItems}
+                className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600"
+              >
+                Update
+              </button>
+            </div>
+            <input
+  type="text"
+  placeholder="Search by farmer..."
+  value={existingSearch}
+  onChange={(e) => {
+    setExistingSearch(e.target.value);
+        setAvailableSearch('');
+    setAvailablePage(1);
 
-            <table className="w-full bg-white  rounded-lg text-sm text-left">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-center ">
-                    <input
-                      type="checkbox"
-                       className='w-5 h-5 '
-                      checked={checkAllExisting}
-                      disabled={existingChallanItems.every(item => item.quantity - item.totalChallanQuantity <= 0)}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
-                        setCheckAllExisting(isChecked);
-
-                        if (isChecked) {
-                          const selectableItems = existingChallanItems
-                            .filter(item => item.quantity - item.totalChallanQuantity > 0)
-                            .map(item => item._id);
-
-                          setSelectedItems(selectableItems);
-
-                          const updatedQuantities = {};
-                          existingChallanItems.forEach(item => {
-                            const remaining = item.quantity - item.totalChallanQuantity;
-                            if (remaining > 0) {
-                              updatedQuantities[item._id] = itemQuantities[item._id] ?? remaining;
-                            }
-                          });
-
-                          setItemQuantities(prev => ({ ...prev, ...updatedQuantities }));
-                        } else {
-                          setSelectedItems([]);
-                        }
-                      }}
-                    />
-                  </th>
-                  <th className="px-4 py-2 ">#</th>
-
-                  <th className="px-4 py-2 ">QTY</th>
-                </tr>
-              </thead>
-              <tbody>
-                {existingChallanItems.map((item, index) => {
-                  const remaining = item.quantity - item.totalChallanQuantity;
-                  const isDisabled = remaining <= 0;
-
-                  return (
-                    <tr key={item._id} className=" even:bg-gray-100/70">
-                      <td className="px-4 py-2 ">
-                        <input
-                          type="checkbox"
- className='w-5 h-5 '                          checked={selectedItems.includes(item._id)}
-                          disabled={isDisabled}
-                          onChange={(e) => {
-                            const isChecked = e.target.checked;
-                            if (isChecked) {
-                              setSelectedItems([...selectedItems, item._id]);
-                              setItemQuantities(prev => ({
-                                ...prev,
-                                [item._id]: prev[item._id] ?? remaining,
-                              }));
-                            } else {
-                              setSelectedItems(selectedItems.filter(id => id !== item._id));
-                              setItemQuantities(prev => {
-                                const updated = { ...prev };
-                                delete updated[item._id];
-                                return updated;
-                              });
-                              setCheckAllAvailable(false);
-                            }
-                          }}
-                        /></td>
-                      <td className="px-4 py-2 ">
-                        {index + 1}
-                        {item.farmerId?.firstName || '-'}
-                        {item.plantTypeId?.name || '-'}
-                        Total: {item.quantity} / {item.totalChallanQuantity}</td>
-                      <td className="px-4 py-2 ">
-                        <input
-                          type="number"
-                          min="1"
-                          max={remaining}
-                          disabled={!selectedItems.includes(item._id) || isDisabled}
-                          value={
-                            itemQuantities[item._id] !== undefined
-                              ? itemQuantities[item._id]
-                              : remaining
-                          }
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value, 10);
-                            setItemQuantities(prev => ({
-                              ...prev,
-                              [item._id]: isNaN(value) ? '' : value
-                            }));
-                          }}
-                          className={`border px-2 py-1 rounded w-20  transition-opacity duration-300 ${!selectedItems.includes(item._id) || isDisabled ? 'opacity-40 pointer-events-none bg-gray-100 border-gray-200' : 'opacity-100 bg-blue-50 border-blue-400'
-                            }`}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className='w-full'>
-
-          {/* Available Items Table */}
-          <div className="mt-4 overflow-x-auto border border-gray-300 w-full rounded-2xl">
-            <button onClick={handleUpdateItems} className="m-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              Update
-            </button>
-
-            <table className="w-full bg-white  rounded-lg text-sm text-left">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-center ">
-                    <input
-                    className='w-5 h-5 '
-                      type="checkbox"
-                      checked={checkAllAvailable}
-                      disabled={availableItems.every(item => item.quantity - item.totalChallanQuantity <= 0)}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
-                        setCheckAllAvailable(isChecked);
-
-                        if (isChecked) {
-                          const selectableItems = availableItems
-                            .filter(item => item.quantity - item.totalChallanQuantity > 0)
-                            .map(item => item._id);
-
-                          setSelectedItems(selectableItems);
-
-                          const updatedQuantities = {};
-                          availableItems.forEach(item => {
-                            const remaining = item.quantity - item.totalChallanQuantity;
-                            if (remaining > 0) {
-                              updatedQuantities[item._id] = itemQuantities[item._id] ?? remaining;
-                            }
-                          });
-
-                          setItemQuantities(prev => ({ ...prev, ...updatedQuantities }));
-                        } else {
-                          setSelectedItems([]);
-                        }
-                      }}
-                    />
-                  </th>
-                  <th className="px-4 py-2 ">#</th>
-                  
-                  <th className="px-4 py-2 ">Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {availableItems.map((item, index) => {
-                  const remaining = item.quantity - item.totalChallanQuantity;
-                  const isDisabled = remaining <= 0;
-
-                  return (
-                    <tr key={item._id} className=" even:bg-gray-100/70">
-                      <td className="px-4 py-2 ">
-                        <input
-                          type="checkbox"
-                                              className='w-5 h-5 '
-
-                          checked={selectedItems.includes(item._id)}
-                          disabled={isDisabled}
-                          onChange={(e) => {
-                            const isChecked = e.target.checked;
-                            if (isChecked) {
-                              setSelectedItems([...selectedItems, item._id]);
-                              setItemQuantities(prev => ({
-                                ...prev,
-                                [item._id]: prev[item._id] ?? remaining,
-                              }));
-                            } else {
-                              setSelectedItems(selectedItems.filter(id => id !== item._id));
-                              setItemQuantities(prev => {
-                                const updated = { ...prev };
-                                delete updated[item._id];
-                                return updated;
-                              });
-                              setCheckAllExisting(false);
-                            }
-                          }}
-                        />
-                      </td>
-                      <td className="px-4 py-2 ">{index + 1}
-                        {item.farmerId?.firstName || '-'}
-                        {item.plantTypeId?.name || '-'}
-                         {item.quantity} / {item.totalChallanQuantity}</td>
-                      <td className="px-4 py-2 ">
-                        <input
-                          type="number"
-                          min="1"
-                          max={remaining}
-                          disabled={!selectedItems.includes(item._id) || isDisabled}
-                          value={
-                            itemQuantities[item._id] !== undefined
-                              ? itemQuantities[item._id]
-                              : remaining
-                          }
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value, 10);
-                            setItemQuantities(prev => ({
-                              ...prev,
-                              [item._id]: isNaN(value) ? '' : value
-                            }));
-                          }}
-                          className="border px-2 py-1 rounded w-20"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
+    fetchOrderItems(selectedOrder.orderId, 1, availablePage, e.target.value);
+    setExistingPage(1);
+  }}
+  className={`mb-2 p-2 border border-gray-400 rounded-lg w-full focus:border-blue-300 focus:outline-0`}
+/>
+{renderTable(existingChallanItems, checkAllExisting, setCheckAllExisting, 'existing', existingPage, ITEMS_PER_PAGE)}
             <div className="mt-4">
               <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={(page) => setCurrentPage(page)}
+                currentPage={existingPage}
+                totalPages={existingPagination.totalPages}
+                onPageChange={(page) => setExistingPage(page)}
+              />
+            </div>
+          </div>
+
+          {/* Available Items */}
+          <div className="w-full border border-gray-300 rounded-2xl p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-semibold text-gray-800">Available Items ({availablePagination.totalItems})</h2>
+              <button
+                onClick={handleUpdateItems}
+                className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600"
+              >
+                Update
+              </button>
+            </div>
+            <input
+  type="text"
+  placeholder="Search available items by farmer"
+  value={availableSearch}
+  onChange={(e) => {
+    setAvailableSearch(e.target.value);
+        setExistingSearch('');
+    setExistingPage(1);
+
+    setAvailablePage(1);
+    fetchOrderItems(selectedOrder.orderId, existingPage, 1);
+  }}
+  className={`mb-2 p-2 border border-gray-400 rounded-lg w-full focus:border-blue-300 focus:outline-0`}
+/>
+{renderTable(availableItems, checkAllAvailable, setCheckAllAvailable, 'available', availablePage, ITEMS_PER_PAGE)}
+            <div className="mt-4">
+              <Pagination
+                currentPage={availablePage}
+                totalPages={availablePagination.totalPages}
+                onPageChange={(page) => setAvailablePage(page)}
               />
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

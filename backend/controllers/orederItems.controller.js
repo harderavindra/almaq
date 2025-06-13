@@ -31,52 +31,48 @@ export const getOrderItemChallan = async (req, res) => {
   try {
     const {
       orderId,
-      search = '',
-      page = 1,
+      existingSearch = '',
+      availableSearch = '',
+      existingPage = 1,
+      availablePage = 1,
       limit = 10,
     } = req.query;
 
-    const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    const existingPageNum = parseInt(existingPage);
+    const availablePageNum = parseInt(availablePage);
 
     if (!orderId) {
       return res.status(400).json({ error: 'Order ID is required' });
     }
- const orderDetails = await Order.findById(orderId)
-      .populate('departmentId', 'name') // populate department name if needed
+
+    const orderDetails = await Order.findById(orderId)
+      .populate('departmentId', 'name')
       .lean();
 
     if (!orderDetails) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Filter for OrderItems
-    const filter = { orderId };
+    // Initial filter
+    const baseFilter = { orderId };
 
-    // Search by farmer name
-    if (search) {
-      const farmerRegex = new RegExp(search, 'i');
-      const matchingFarmers = await Farmer.find({
-        $or: [{ firstName: farmerRegex }, { lastName: farmerRegex }],
-      }).select('_id');
-      filter.farmerId = { $in: matchingFarmers.map(f => f._id) };
-    }
-
-    const totalItems = await OrderItem.countDocuments(filter);
-
-    const items = await OrderItem.find(filter)
-      .skip(skip)
-      .limit(limitNum)
+    // Fetch all items once
+    const allItems = await OrderItem.find(baseFilter)
       .populate('farmerId', 'firstName lastName contactNumber')
-      .populate('plantTypeId', 'name')
-      .sort({ createdAt: -1 });
+      .populate('plantTypeId', 'name');
 
-    // Gather all challanIds
-    const allChallanIds = items.flatMap(item => item.challanIds || []);
+    // Sort items by farmer name
+    allItems.sort((a, b) => {
+      const nameA = `${a.farmerId?.firstName || ''} ${a.farmerId?.lastName || ''}`.toLowerCase();
+      const nameB = `${b.farmerId?.firstName || ''} ${b.farmerId?.lastName || ''}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    // Get all challan quantities
+    const allChallanIds = allItems.flatMap(item => item.challanIds || []);
     const challans = await Challan.find({ _id: { $in: allChallanIds } }).select('items');
 
-    // Create a map of orderItemId -> total challanQuantity
     const quantityMap = {};
     challans.forEach(challan => {
       challan.items.forEach(({ orderItemId, challanQuantity }) => {
@@ -85,23 +81,69 @@ export const getOrderItemChallan = async (req, res) => {
       });
     });
 
-    const enrichedItems = items.map(item => ({
+    // Enrich items with totalChallanQuantity
+    const enrichedItems = allItems.map(item => ({
       ...item.toObject(),
       totalChallanQuantity: quantityMap[item._id.toString()] || 0,
     }));
 
-    const pagination = {
-      totalItems,
-      currentPage: pageNum,
-      totalPages: Math.ceil(totalItems / limitNum),
+    // Filtering logic
+    const matchFarmer = async (searchText) => {
+      if (!searchText) return null;
+      const regex = new RegExp(searchText, 'i');
+      const farmers = await Farmer.find({
+        $or: [{ firstName: regex }, { lastName: regex }],
+      }).select('_id');
+      return farmers.map(f => f._id.toString());
     };
 
-    res.json({  order: orderDetails,items: enrichedItems, pagination });
+    const existingFarmerIds = await matchFarmer(existingSearch);
+    const availableFarmerIds = await matchFarmer(availableSearch);
+
+    const existingItemsFull = enrichedItems.filter(i =>
+      i.totalChallanQuantity > 0 &&
+      (!existingFarmerIds || existingFarmerIds.includes(i.farmerId?._id.toString()))
+    );
+
+    const availableItemsFull = enrichedItems.filter(i =>
+      i.totalChallanQuantity < i.quantity &&
+      (!availableFarmerIds || availableFarmerIds.includes(i.farmerId?._id.toString()))
+    );
+
+    const existingTotalPages = Math.ceil(existingItemsFull.length / limitNum);
+    const availableTotalPages = Math.ceil(availableItemsFull.length / limitNum);
+
+    const paginatedExisting = existingItemsFull.slice(
+      (existingPageNum - 1) * limitNum,
+      existingPageNum * limitNum
+    );
+
+    const paginatedAvailable = availableItemsFull.slice(
+      (availablePageNum - 1) * limitNum,
+      availablePageNum * limitNum
+    );
+
+    res.json({
+      order: orderDetails,
+      existingItems: paginatedExisting,
+      existingPagination: {
+        currentPage: existingPageNum,
+        totalPages: existingTotalPages,
+        totalItems: existingItemsFull.length,
+      },
+      availableItems: paginatedAvailable,
+      availablePagination: {
+        currentPage: availablePageNum,
+        totalPages: availableTotalPages,
+        totalItems: availableItemsFull.length,
+      },
+    });
   } catch (err) {
     console.error('Error fetching challan items:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 // controllers/orderItemController.js
 export const updateOrderItemStatus = async (req, res) => {
@@ -185,11 +227,11 @@ export const getOrderitemInvoice = async (req, res) => {
       },
       farmer: farmer
         ? {
-            _id: farmer._id,
-            name: farmer.name,
-            address: farmer.address,
-            contactNumber: farmer.contactNumber,
-          }
+          _id: farmer._id,
+          name: farmer.name,
+          address: farmer.address,
+          contactNumber: farmer.contactNumber,
+        }
         : null,
       items,
     };

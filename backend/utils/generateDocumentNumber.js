@@ -6,6 +6,7 @@ export const generateDocumentNumber = async (type) => {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const prefix = type.toUpperCase(); // 'ORD', 'CHL', 'INV'
+  // remove month for challan (Developer)
   const counterId = `${prefix}-${year}-${month}`;
 
   const counter = await Counter.findByIdAndUpdate(
