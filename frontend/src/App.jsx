@@ -22,7 +22,7 @@ import PrintLayout from './components/layout/PrintLayout.';
 import UpdatePayment from './pages/UpdatePayment';
 import InvoiceList from './pages/InvoiceList';
 import OrderEditPage from './pages/OrderEditPage';
-import ChallanEditPage from './pages/challanEditPage';
+import ChallanEditPage from './pages/ChallanEditPage';
 
 function App() {
   return (
