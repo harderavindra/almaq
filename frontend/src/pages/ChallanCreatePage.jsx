@@ -26,7 +26,7 @@ const ChallanCreatePage = () => {
     challanNo: '',
     vehicleId: '',
     routeDetails: '',
-    dispatchDate: today,
+    dispatchDate: today, 
     notes: '',
   });
 
