@@ -61,7 +61,6 @@ const isNextDisabled = !maxDate ||
         Cash: <FaMoneyBillWave />,
         UPI: <FaMoneyCheck />,
         Transfer: <FaMoneyCheck />,
-        Cheque: <FaMoneyBillWave />,
         'Pending': 'clock',
         'Paid': 'done',
         'Partially Paid': 'check',
