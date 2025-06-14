@@ -14,15 +14,15 @@ const AdminLayout = ({ children }) => {
         <img src={Logo} height='40' alt='Logo' />
         </h2>
         <nav>
-          <ul className='flex gap-6'>
-            <li className='px-3'><NavLink to="/" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Dashboard</NavLink></li>
-            <li className='px-3'><NavLink to="/orders" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Orders</NavLink></li>
-            <li className='px-3'><NavLink to="/challans" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Challans</NavLink></li>
-            <li className='px-3'><NavLink to="/invoices" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Invoice</NavLink></li>
+          <ul className='flex gap-2'>
+            <li className='px-3'><NavLink to="/" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' } px-4 py-2 `} >Dashboard</NavLink></li>
+            <li className='px-3'><NavLink to="/orders" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' } px-4 py-2`} >Orders</NavLink></li>
+            <li className='px-3'><NavLink to="/challans" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' } px-4 py-2`} >Challans</NavLink></li>
+            <li className='px-3'><NavLink to="/invoices" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' } px-4 py-2`} >Invoice</NavLink></li>
             { user.role === 'admin' && (
-            <li className='px-3'><NavLink to="/users" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Users</NavLink></li>
+            <li className='px-3'><NavLink to="/users" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' } px-4 py-2`} >Users</NavLink></li>
             )}
-            <li className='px-3'><NavLink to="/master" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white py-1 px-4 rounded-full ':'' }`} >Master</NavLink></li>
+            <li className='px-3'><NavLink to="/master" className={({ isActive }) =>`${isActive ? 'bg-blue-500 text-white  rounded-full ':'' }  px-4 py-2`} >Master</NavLink></li>
           </ul>
         </nav>
         <div className='flex gap-3 items-center'>
@@ -38,8 +38,8 @@ const AdminLayout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className=' ' >
-        <main>{<Outlet />        }</main>
+      <div className=' px-10 min-h-screen' >
+        <main >{<Outlet />        }</main>
       </div>
     </div>
   );

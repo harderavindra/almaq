@@ -11,12 +11,12 @@ const statuses = ["Draft", "Submitted", "Approved", "Delivered", "Cancelled",];
 const OrderSidebar = ({ activeStatus }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-   const canEdit = hasAccess(user?.role, ['admin', 'manager']);
-    const canView = hasAccess(user?.role, ['viewer']);
-    const [counts, setCounts] = useState({});
-    const [highlighted, setHighlighted] = useState(activeStatus || '');
+  const canEdit = hasAccess(user?.role, ['admin', 'manager']);
+  const canView = hasAccess(user?.role, ['viewer']);
+  const [counts, setCounts] = useState({});
+  const [highlighted, setHighlighted] = useState(activeStatus || '');
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchStatusCounts = async () => {
       try {
         const response = await api.get('/orders/status-counts');
@@ -42,28 +42,27 @@ const OrderSidebar = ({ activeStatus }) => {
   };
 
   return (
-    <div className="w-52 h-full p-4">
-      <h3 className="text-lg font-bold mb-4">Order Status</h3>
+    <div className="w-60 h-full pt-5 min-w-40 sticky top-0">
       <ul className="space-y-2">
         {canEdit && (
-      <li
-           
-              className={`cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center ${activeStatus === "Add" ? "bg-blue-500 text-white" : "hover:bg-blue-100"}`}
-            
-            >
-              <Link to="/add-order" className="flex gap-4 items-center">
+          <li
+
+            className={`cursor-pointer px-5 py-2 rounded-full flex gap-4 items-center ${activeStatus === "Add" ? "bg-blue-500 text-white" : "hover:bg-blue-100"}`}
+
+          >
+            <Link to="/add-order" className="flex gap-4 items-center">
               <FiPlus size={20} />
               Add Order
-              </Link>
-            </li>
+            </Link>
+          </li>
         )}
         {statuses.map((status) => {
-         
-           const count = counts[status] || 0;
-            const isDisabled = count === 0;
-          const isActive = activeStatus === status ;
+
+          const count = counts[status] || 0;
+          const isDisabled = count === 0;
+          const isActive = activeStatus === status;
           return (
-             <li
+            <li
               key={status}
               className={`
                 px-5 py-2 rounded-full flex justify-between items-center
@@ -74,7 +73,7 @@ const OrderSidebar = ({ activeStatus }) => {
             >
               <OrderStatusIcon status={status} size={20} color={``} />
               {status}
-               <span className="text-sm font-bold">{count}</span>
+              <span className="text-sm font-bold">{count}</span>
             </li>
           );
         })}

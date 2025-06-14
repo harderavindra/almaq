@@ -1,13 +1,19 @@
-import { FiCheck, FiClock, FiCheckSquare, FiClipboard, FiThumbsUp, FiTrash2, FiHelpCircle } from 'react-icons/fi';
+import { FiCheck, FiClock, FiCheckSquare, FiClipboard, FiThumbsUp, FiTrash2, FiHelpCircle, FiTruck, FiXCircle } from 'react-icons/fi';
 
- const ORDERICONS = {
+ const STATUS_ICONS = {
+  // Order statuses
   Draft: FiClipboard,
   Submitted: FiClock,
   Approved: FiCheckSquare,
   Delivered: FiThumbsUp,
   Cancelled: FiTrash2,
+
+  // Challan statuses
+  Issued: FiTruck,
+  Returned: FiXCircle, // Example additional status if needed
 };
- const COLORS = {
+
+const COLORS = {
   primary: '#007BFF',
   secondary: '#6C757D',
   success: '#28A745',
@@ -17,10 +23,10 @@ import { FiCheck, FiClock, FiCheckSquare, FiClipboard, FiThumbsUp, FiTrash2, FiH
   white: '#FFFFFF',
   black: '#000000',
 };
-export const OrderStatusIcon = ({ status, size='20', color='' }) => {
-  const IconComponent = ORDERICONS[status] || FiHelpCircle;
 
-  return <IconComponent size={size} color={COLORS[color]} />;
+export const OrderStatusIcon = ({ status, size = '20', color = '' }) => {
+  const IconComponent = STATUS_ICONS[status] || FiHelpCircle;
+  return <IconComponent size={size} color={COLORS[color] || color} />;
 };
 
 

@@ -230,9 +230,7 @@ export const getOrderWithItemsById = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    console.log();
     let { page = 1, limit = 10, status } = req.query;
-    console.log(status);
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -248,8 +246,8 @@ export const getOrders = async (req, res) => {
     const orders = await Order.find(filter)
       .skip(skip)
       .limit(limit)
-      .sort({ updatedAt: -1 }) // Show most recent orders first
-      .populate("departmentId", "name")
+      .sort({ orderDate: -1 }) // Show most recent orders first
+      .populate("departmentId", "name taluka district")
 
       ; // Adjust based on department model
 
@@ -462,7 +460,22 @@ export const addItemToOrder = async (req, res) => {
 
   } catch (error) {
     console.error('Error adding item:', error);
-    res.status(500).json({ success: false, message: 'Server error', error });
+
+    // Check if it's a Mongoose validation error
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
   }
 };
 

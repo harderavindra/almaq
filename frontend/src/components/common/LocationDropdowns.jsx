@@ -43,20 +43,21 @@ const locationData = {
 
 const LocationDropdowns = ({
     onChange,
-    defaultState = 'Maharashtra',
-    defaultDistrict ,
-    defaultTaluka ,
+    defaultState = '',
+    defaultDistrict,
+    defaultTaluka,
     defaultCity = '',
-    className='',
-     showCityInput = true,
-     hideLabel = false,
-     listStyle='flex'
+    className = '',
+    showCityInput = true,
+    hideLabel = false,
+    listStyle = 'flex',
+    errors = {} 
 }) => {
     const [selectedState, setSelectedState] = useState(defaultState);
     const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict);
     const [selectedTaluka, setSelectedTaluka] = useState(defaultTaluka);
     const [selectedCity, setSelectedCity] = useState(defaultCity);
-    const listClass =listStyle == 'flex' ? 'flex flex-col' : 'grid grid-cols-2';
+    const listClass = listStyle == 'flex' ? 'flex flex-col' : 'grid grid-cols-2';
 
     useEffect(() => {
         setSelectedState(defaultState);
@@ -72,7 +73,7 @@ const LocationDropdowns = ({
             taluka: selectedTaluka,
             city: selectedCity
         });
-    }, [selectedState, selectedDistrict, selectedTaluka,selectedCity]);
+    }, [selectedState, selectedDistrict, selectedTaluka, selectedCity]);
 
     const stateOptions = Object.keys(locationData).map(state => ({
         label: state,
@@ -95,52 +96,64 @@ const LocationDropdowns = ({
 
     return (
         <div className={`${listClass} gap-3 ${className} w-full`}>
-            
+
             <SelectDropdown
-                label={hideLabel? '':"State"}
+                label={hideLabel ? '' : "State"}
                 value={selectedState}
                 onChange={(e) => {
                     setSelectedState(e.target.value);
                     setSelectedDistrict('');
                     setSelectedTaluka('');
+                      setLocationErrors((prev) => ({ ...prev, state: undefined }));
+
                 }}
                 options={stateOptions}
                 placeholder="Select State"
                 className='w-full'
+                  hasError={errors.state}
+
             />
 
             {selectedState && (
+                <>
                 <SelectDropdown
-                    label={hideLabel? '':"District"}
+                    label={hideLabel ? '' : "District"}
                     value={selectedDistrict}
                     onChange={(e) => {
                         setSelectedDistrict(e.target.value);
                         setSelectedTaluka('');
+    setLocationErrors((prev) => ({ ...prev, district: undefined }));
+
                     }}
                     options={districtOptions}
                     placeholder="Select District"
                     className='w-full'
+                    hasError={errors.district}
+
                 />
+                </>
             )}
 
             {selectedDistrict && (
                 <SelectDropdown
-                    label={hideLabel? '':"Taluka"}
+                    label={hideLabel ? '' : "Taluka"}
                     value={selectedTaluka}
                     onChange={(e) => setSelectedTaluka(e.target.value)}
                     options={talukaOptions}
                     placeholder="Select Taluka"
                     className='w-full'
+                    hasError={errors.taluka}
                 />
             )}
             {showCityInput && (
-            <InputText label={"City/Village"}
-                name={hideLabel? '':"city"}
-                placeholder="Enter City or Village"
-                handleOnChange={(e) => { setSelectedCity(e.target.value); console.log(e.target.value) }}
-                value={selectedCity}
-                className='w-full'
-            />)}
+                <InputText label={"City/Village"}
+                    name={hideLabel ? '' : "city"}
+                    placeholder="Enter City or Village"
+                    handleOnChange={(e) => { setSelectedCity(e.target.value); console.log(e.target.value) }}
+                    value={selectedCity}
+                    className='w-full'
+                     hasError={errors.city}
+                />)}
         </div>
     );
 };

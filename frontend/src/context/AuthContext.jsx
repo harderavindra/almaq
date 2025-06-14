@@ -9,9 +9,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const res = await axios.post('/auth/login', credentials);
-    console.log(res)
     setUser(res.data);
-    console.log(res.data)
   };
 
   const logout = async () => {
@@ -23,7 +21,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post('/auth/refresh');
       setUser(res.data.user); // Or fetch user info if only token returned
-      console.log(res.data.user)
     } catch {
       setUser(null);
     }

@@ -10,6 +10,8 @@ import Button from '../components/common/Button';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import ChallanSidebar from '../components/layout/ChallanSidebar';
 import { validateDate, validateDropdown, validateRequired } from '../utils/validators';
+import StatusSidebar from '../components/layout/StatusSidebar';
+import { OrderStatusIcon } from '../utils/constants';
 
 const ChallanCreatePage = () => {
   const navigate = useNavigate();
@@ -131,10 +133,15 @@ const ChallanCreatePage = () => {
   return (
     <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
 
-      {/* Sidebar */}
-      {
-        <ChallanSidebar />
-      }
+     <StatusSidebar
+                     statuses={['Draft', 'Issued',  'Delivered', 'Cancelled']}
+       endpoint="/challans/status-counts"
+                      basePath="/challans"
+       addPath="/add-challan"
+     
+                     getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
+                     allowedRoles={['admin', 'manager']}
+                 />
       <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
      
         <div className="flex justify-between">

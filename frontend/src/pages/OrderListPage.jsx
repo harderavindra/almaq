@@ -6,6 +6,9 @@ import Pagination from '../components/Pagination';
 import IconButton from '../components/common/IconButton';
 import { FiFile, FiPenTool, FiTrash } from 'react-icons/fi';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
+import StatusSidebar from '../components/layout/StatusSidebar';
+import { OrderStatusIcon } from '../utils/constants';
+import TableSkeletonRows from '../components/common/TableSkeletonRows';
 
 const OrderListPage = () => {
     const navigate = useNavigate()
@@ -30,15 +33,26 @@ const OrderListPage = () => {
     }, [successMessage]);
 
     const fetchOrders = async (status, pageNumber) => {
+        setIsLoading(true);
         try {
             const res = await api.get('/orders', {
                 params: { status, page: pageNumber, limit },
             });
-            console.log('Fetched Orders:', res.data);
-            setOrders(res.data.orders);
-            setTotalPages(res.data.totalPages || 1);
+
+            const { orders = [], totalPages = 1 } = res.data || {};
+            setOrders(orders);
+            setTotalPages(totalPages);
+            console.log(orders)
+
+            setMessage({ type: 'success', text: 'Orders loaded successfully' });
         } catch (err) {
             console.error('Failed to fetch orders', err);
+            setMessage({
+                type: 'error',
+                text: err?.response?.data?.message || 'Failed to load orders',
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -64,53 +78,70 @@ const OrderListPage = () => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-            <OrderSidebar activeStatus={statusFilter} onChange={handleStatusChange} />
-
-            <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl">
-                <h2 className="text-3xl font-bold mb-4">Orders – {statusFilter}</h2>
-
-                <div className="overflow-x-auto flex-1">
+        <div className="flex flex-col md:flex-row h-full  gap-10 ">
+            <StatusSidebar
+                statuses={['Draft', 'Submitted', 'Approved', 'Delivered', 'Cancelled']}
+                endpoint="/orders/status-counts"
+                basePath="/orders"
+                addPath="/add-order"
+                getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
+                allowedRoles={['admin', 'manager']}
+            />
+            <div className="px-10 py-6 w-full  flex flex-col bg-white rounded-xl relative">
+                <div className="flex items-center justify-between gap-4 pb-5 min-h-10" >
+                    <h2 className="text-3xl font-bold  ">Order : {statusFilter}
+                    </h2>
                     <StatusMessageWrapper
                         loading={isLoading}
                         success={message.type === 'success' ? message.text : ''}
                         error={message.type === 'error' ? message.text : ''}
+                        className="sticky top-0 z-10"
                     />
+                </div>
+
+                <div className="overflow-x-auto flex-1">
+
                     <table className="w-full rounded-xl overflow-hidden" border="0">
                         <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
                             <tr>
-                                <th className="px-3 py-3 font-semibold text-left">Department</th>
                                 <th className="px-3 py-3 font-semibold text-left">Order Ref No</th>
-                                <th className="px-3 py-3 font-semibold text-left">Letter No</th>
                                 <th className="px-3 py-3 font-semibold text-left">Order Date</th>
+                                <th className="px-3 py-3 font-semibold text-left">Location</th>
+                                <th className="px-3 py-3 font-semibold text-left">Department</th>
                                 <th className="px-3 py-3 font-semibold text-left">Contact</th>
-                                <th className="px-3 py-3 font-semibold text-left">Status</th>
                                 <th className="px-3 py-3 font-semibold text-left">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.map((o) => (
-                                <tr key={o._id} className="even:bg-gray-100/70">
-                                    <td className="px-3 py-4">{o.departmentId?.name}</td>
-                                    <td className="px-3 py-4">{o.orderRefNo}</td>
-                                    <td className="px-3 py-4">{o.orderLetterNumber}</td>
-                                    <td className="px-3 py-4">
-                                        {new Date(o.orderDate).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-3 py-4">{o.contactPerson}-{o.contactNumber}</td>
-                                    <td className="px-3 py-4">{o.status}</td>
-                                    <td className="px-3 py-4">
-                                        <div className='flex gap-3'>
+                            {isLoading ? (
+                                 <TableSkeletonRows
+      rowCount={5}
+      columnWidths={['6rem', '5rem', '8rem', '7rem', '6rem']}
+      hasActions={true}
+    />
+                            ) : (
+                                orders.map((o) => (
+                                    <tr key={o._id} className="even:bg-gray-100/70">
+                                        <td className="px-3 py-4">{o.orderRefNo}</td>
+                                        <td className="px-3 py-4">
+                                            {new Date(o.orderDate).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-3 py-4">{o.departmentId?.taluka}, {o.departmentId?.district}</td>
+                                        <td className="px-3 py-4">{o.departmentId?.name}</td>
+                                        <td className="px-3 py-4">{o.contactPerson}</td>
+                                        <td className="px-3 py-4">
+                                            <div className='flex gap-3'>
 
-                                            <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
-                                            <IconButton  label='' shape='pill' onClick={() => navigate(`/orders/${o._id}/edit`)} icon={<FiPenTool size="18" />} />
-                                            <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
-                                        </div>
+                                                {/* <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} /> */}
+                                                <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}/edit`)} icon={<FiPenTool size="18" />} />
+                                                <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
+                                            </div>
 
 
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                    </tr>
+                                )))
+                            }
                         </tbody>
                     </table>
                 </div>

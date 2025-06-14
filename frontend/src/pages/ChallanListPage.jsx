@@ -11,6 +11,8 @@ import { PiPottedPlant } from "react-icons/pi";
 
 import { BsCurrencyRupee } from "react-icons/bs";
 import ChallanSidebar from '../components/layout/ChallanSidebar';
+import { OrderStatusIcon } from '../utils/constants';
+import StatusSidebar from '../components/layout/StatusSidebar';
 
 const ChallanListPage = () => {
     const { user } = useAuth();
@@ -56,8 +58,17 @@ const statusFilter = query.get('status'); // "Draft", "Issued", etc.
         <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
 
             {/* Sidebar */}
-            <ChallanSidebar/>
-           
+            {/* <ChallanSidebar/> */}
+                {/* Sidebar */}
+            <StatusSidebar
+                statuses={['Draft', 'Issued',  'Delivered', 'Cancelled']}
+  endpoint="/challans/status-counts"
+                 basePath="/challans"
+  addPath="/add-challan"
+
+                getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
+                allowedRoles={['admin', 'manager']}
+            />
 
             {/* Main Content */}
             <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">

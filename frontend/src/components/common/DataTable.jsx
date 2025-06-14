@@ -40,7 +40,7 @@ const DataTable = ({ columns, data, isLoading, onEdit,isModalOpen, onDelete, emp
                             <td className="px-4 py-4 whitespace-nowrap text-right space-x-2">
                                 <div className="flex gap-2 justify-end">
                                     <IconButton onClick={() => onEdit(item._id)} icon={<FiEdit2 />} label="" />
-                                    <IconButton onClick={() => onDelete(item._id)} icon={<FiTrash2 />} label="" />
+                                    <IconButton variant='danger' onClick={() => onDelete(item._id)} icon={<FiTrash2 />} label="" />
                                 </div>
                             </td>
                             
