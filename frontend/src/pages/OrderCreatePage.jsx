@@ -169,7 +169,7 @@ const OrderCreatePage = () => {
                   }));
                   setSelectedDistrict(deptObj.district || '');
                 }}
-                hasError={!!errors.departmentId}
+                hasError={!!errors.departmentId} 
                 errorMessage={errors.departmentId}
               />
             </div>
