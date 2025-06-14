@@ -45,8 +45,12 @@ export const searchDepartments = async (req, res) => {
 
     res.json({ success: true, data: departments });
   } catch (error) {
-    console.error('Error during department search:', error);
-    res.status(500).json({ success: false, message: 'Search failed' });
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: 'Validation failed', errors: messages });
+    }
+
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -66,11 +70,15 @@ export const getDepartmentById = async (req, res) => {
 // Create a new department
 export const createDepartment = async (req, res) => {
   try {
+    console.log("test")
     const newDepartment = new Department(req.body);
+    console.log("test22",newDepartment)
     await newDepartment.save();
+    console.log("test3",newDepartment)
     res.status(201).json({ message: 'Department created successfully', data: newDepartment });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating department', error });
+    console.error("Error creating department:", error.message); // This will help
+    res.status(500).json({ message: 'Error creating department', error: error.message });
   }
 };
 

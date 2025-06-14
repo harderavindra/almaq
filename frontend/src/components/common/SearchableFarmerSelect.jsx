@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import SelectDropdown from './SelectDropdown';
 import LocationDropdowns from './LocationDropdowns';
 import { FiPlus, FiUser } from 'react-icons/fi';
-const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, district, taluka,disabled }) => {
+const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, district, taluka,disabled ,hasError}) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -76,7 +76,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
         
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search Farmer..."
-        className={`border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0 ${disabled? 'opacity-10':''}`}
+        className={`border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0 ${disabled? 'opacity-10':''} ${hasError ? 'ring-red-100 outline-red-300 ring-3 border-red-300':''}`}
         onFocus={() => {setShowDropdown2(true); setSearchTerm('');}}
         disabled={disabled}
       />

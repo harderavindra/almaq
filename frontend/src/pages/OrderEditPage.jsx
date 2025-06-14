@@ -12,6 +12,7 @@ import LocationDropdowns from '../components/common/LocationDropdowns';
 import { hasAccess } from '../utils/permissions';
 import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
+import { validateRequired } from '../utils/validators';
 
 const OrderEditPage = () => {
   const { user } = useAuth();
@@ -33,6 +34,11 @@ const OrderEditPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [errors, setErrors] = useState({
+    farmerId: '',
+    plantTypeId: '',
+    quantity: ''
+  });
   const ITEMS_PER_PAGE = 2;
 
   const canEdit = hasAccess(user?.role, ['admin', 'manager']);
@@ -83,7 +89,7 @@ const OrderEditPage = () => {
       setItems(res.data.items); // <- Add this line
       setSummary(res.data.summary);
       setTotalPages(res.data.pagination.totalPages || 1);
-            setCurrentPage(res.data.pagination.currentPage || 1);
+      setCurrentPage(res.data.pagination.currentPage || 1);
 
       setSelectedDistrict(res.data.order.departmentId.district);
       setSelectedTaluka(res.data.order.departmentId.taluka);
@@ -111,16 +117,63 @@ const OrderEditPage = () => {
       updatedForm.pricePerUnit = selectedPlant?.ratePerUnit || '';
     }
 
+
+
+    let error = '';
+    if (field === 'farmerId') error = validateRequired(value, 'Farmer');
+    if (field === 'plantTypeId') error = validateRequired(value, 'Plant Type');
+    if (field === 'quantity') error = validateRequired(value, 'Quantity');
+
     setForm(updatedForm);
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [field]: error
+    }));
+  };
+
+  const handleOnChangeFarmer = (field, value) => {
+    console.log(field, value)
+    let error = '';
+
+    if (field === 'firstName') error = validateRequired(value, 'First Name');
+  if (field === 'lastName') error = validateRequired(value, 'Last Name');
+  if (field === 'contactNumber') error = validateRequired(value, 'Contact Number');
+  if (field === 'idNumber') error = validateRequired(value, 'Identification Number');
+  if (field === 'gender') error = validateRequired(value, 'Gender');
+  if (field === 'address') error = validateRequired(value, 'Address');
+
+
+
+    // Update farmer state
+    setNewFarmer((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Update error state
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [field]: error
+    }));
   };
 
   const updateItemToOrder = async () => {
     const { farmerId, plantTypeId, quantity, pricePerUnit } = form;
 
-    if ((!farmerId && !addNewFarmer) || !plantTypeId || !quantity || !pricePerUnit) {
-      setMessage({ type: 'error', text: 'Please fill all fields.' });
+    const newErrors = {};
+    if (!addNewFarmer) newErrors.farmerId = validateRequired(farmerId, 'Farmer');
+    newErrors.plantTypeId = validateRequired(plantTypeId, 'Plant Type');
+    newErrors.quantity = validateRequired(quantity, 'Quantity');
+
+    setErrors(newErrors);
+
+    const hasError = Object.values(newErrors).some((error) => error);
+    if (hasError) {
+      setMessage({ type: 'error', text: 'Please fix validation errors.' });
       return;
     }
+
+    console.log("Passed")
 
     try {
       const res = await api.post(`/orders/${orderId}/item`, {
@@ -180,14 +233,15 @@ const OrderEditPage = () => {
         <OrderSidebar activeStatus={'Add'} />
 
         <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl relative">
-          <StatusMessageWrapper
-            loading={isLoading}
-            success={message.type === 'success' ? message.text : ''}
-            error={message.type === 'error' ? message.text : ''}
-            className="sticky top-0 z-10"
-          />
-
-          <h2 className="text-3xl font-bold mb-4">Edit Draft Order</h2>
+          <div className="flex justify-between">
+            <h2 className="text-3xl font-bold mb-4">Order</h2>
+            <StatusMessageWrapper
+              loading={isLoading}
+              success={message.type === 'success' ? message.text : ''}
+              error={message.type === 'error' ? message.text : ''}
+              className="sticky top-0 z-10"
+            />
+          </div>
 
           {order && (
             <>
@@ -299,7 +353,9 @@ const OrderEditPage = () => {
 
                         )}
                         value={newFarmer.gender || 'Male'}
-                        onChange={(e) => setNewFarmer({ ...newFarmer, gender: e.target.value })}
+  onChange={(e) => handleOnChangeFarmer('gender', e.target.value)}
+                        hasError={errors.gender}
+
                         placeholder="Select Gender"
                         className='w-full'
                       />
@@ -308,13 +364,19 @@ const OrderEditPage = () => {
                       type="text"
                       label="First Name"
                       value={newFarmer.firstName || ''}
-                      handleOnChange={(e) => setNewFarmer({ ...newFarmer, firstName: e.target.value })}
+                      handleOnChange={(e) => handleOnChangeFarmer('firstName', e.target.value)}
+
+                      hasError={errors.firstName}
+
                     />
                     <InputText
                       type="text"
                       label="Last Name"
                       value={newFarmer.lastName || ''}
-                      handleOnChange={(e) => setNewFarmer({ ...newFarmer, lastName: e.target.value })}
+                      handleOnChange={(e) => handleOnChangeFarmer('lastName', e.target.value)}
+
+                      hasError={errors.lastName}
+
                     />
                   </div>
                   <div className='flex gap-4 '>
@@ -323,20 +385,23 @@ const OrderEditPage = () => {
                       type="number"
                       label="Contact Number"
                       value={newFarmer.contactNumber || ''}
-                      handleOnChange={(e) => setNewFarmer({ ...newFarmer, contactNumber: e.target.value })}
-                      required
+                      handleOnChange={(e) => handleOnChangeFarmer('contactNumber', e.target.value)}
+
+                      hasError={errors.contactNumber}                      
                     />
 
                     <InputText label="Address Line" autoComplete={"Address line"}
                       type="text"
                       value={newFarmer.address || ''}
-                      handleOnChange={(e) => setNewFarmer({ ...newFarmer, address: e.target.value })} />
+                      handleOnChange={(e) => handleOnChangeFarmer('address', e.target.value)}
+                      hasError={errors.address}     
+                       />
                     <InputText
                       type="text"
                       label="Identification Number "
                       value={newFarmer.idNumber || ''}
-                      handleOnChange={(e) => setNewFarmer({ ...newFarmer, idNumber: e.target.value })}
-                      required
+                      handleOnChange={(e) => handleOnChangeFarmer('idNumber', e.target.value)}
+                      hasError={errors.idNumber}     
                     />
                   </div>
                 </div>
@@ -362,6 +427,8 @@ const OrderEditPage = () => {
                   district={selectedDistrict}
                   taluka={selectedTaluka}
                   disabled={addNewFarmer}
+                  hasError={!!errors.farmerId}
+
                 />
                 <IconButton disabled={addNewFarmer} onClick={() => setAddNewFarmer(true)} icon={<FiPlus size={24} />} label='' className={'w-14'} />
               </div>
@@ -375,6 +442,7 @@ const OrderEditPage = () => {
                   value={form.plantTypeId}
                   options={plants}
                   onChange={(e) => handleItemChange('plantTypeId', e.target.value)}
+                  hasError={!!errors.plantTypeId}
                 />
               </div>
               <div className='w-30'>
@@ -399,7 +467,7 @@ const OrderEditPage = () => {
                   handleOnChange={(e) => handleItemChange('quantity', e.target.value)}
                   min={1}
                   step={1}
-                  required
+                  hasError={!!errors.quantity}
                 />
 
               </div>
@@ -474,7 +542,7 @@ const OrderEditPage = () => {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-                        onPageChange={setCurrentPage}
+            onPageChange={setCurrentPage}
           />
 
 

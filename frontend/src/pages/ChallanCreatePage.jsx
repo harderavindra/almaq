@@ -5,11 +5,11 @@ import { FiBox, FiCalendar, FiPlus, FiTruck, FiUser, FiX } from 'react-icons/fi'
 import InputText from '../components/common/InputText';
 import SelectDropdown from '../components/common/SelectDropdown';
 import OrderItemSelector from '../components/challan/OrderItemSelector';
-import { RiPlantLine } from "react-icons/ri";
-import IconButton from '../components/common/IconButton';
+
 import Button from '../components/common/Button';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import ChallanSidebar from '../components/layout/ChallanSidebar';
+import { validateDate, validateDropdown, validateRequired } from '../utils/validators';
 
 const ChallanCreatePage = () => {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ const ChallanCreatePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
     const today = new Date().toISOString().split('T')[0];
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     challanNo: '',
@@ -28,13 +29,10 @@ const ChallanCreatePage = () => {
     routeDetails: '',
     dispatchDate: today,
     notes: '',
-    items: []
   });
 
-  const [newItem, setNewItem] = useState({ orderItemId: '', quantity: '' });
   const [showSelector, setShowSelector] = useState(false);
 
-  // Load vehicles and orderItems on mount
   useEffect(() => {
     const fetchChallanNo = async () => {
       try {
@@ -70,29 +68,57 @@ const ChallanCreatePage = () => {
     fetchDropdownData();
   }, []);
 
+ const validateField = (field, value) => {
+    switch (field) {
+      case 'challanNo':
+        return validateRequired(value, 'Challan No');
+      case 'vehicleId':
+        return validateDropdown(value, 'Vehicle');
+      case 'dispatchDate':
+        return validateDate(value, 'Dispatch Date');
+      case 'routeDetails':
+        return validateRequired(value, 'Route Details');
+      default:
+        return '';
+    }
+  };
+
+
+   const validateForm = () => {
+    const fields = ['challanNo', 'vehicleId', 'dispatchDate', 'routeDetails'];
+    const newErrors = {};
+
+    fields.forEach(field => {
+      const error = validateField(field, form[field]);
+      if (error) newErrors[field] = error;
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    const error = validateField(field, value);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setIsLoading(true);
     setErrorMessage('');
 
     try {
       const response = await api.post('/challans', form);
-      // Navigate first before resetting the form (avoids unnecessary re-renders)
       
       navigate(`/challans/${response.data.challan._id}/edit?status=${response.data.challan.status}`, {
         state: { success: 'Challan created successfully' }
       });
 
-      // Optional: If staying on the same page (e.g., with a modal), reset here
-      setForm({
-        challanNo: '',
-        vehicleId: '',
-        dispatchDate: '',
-        notes: '',
-        items: []
-      });
+    
     } catch (error) {
       console.error('Challan creation failed:', error);
       setErrorMessage(
@@ -111,17 +137,24 @@ const ChallanCreatePage = () => {
         <ChallanSidebar />
       }
       <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
-        {
+     
+        <div className="flex justify-between">
+          <h2 className="text-3xl font-bold mb-4">Add Challan</h2>
           <StatusMessageWrapper
             loading={isLoading}
             success={message.type === 'success' ? message.text : ''}
             error={message.type === 'error' ? message.text : ''}
-          />}
-        <h2 className="text-3xl font-bold mb-4">Challan Details</h2>
+            className="sticky top-0 z-10"
+          />
+        </div>
         <form onSubmit={handleSubmit} className="w-full">
           <div className="flex gap-10 justify-between ">
             <div className="mb-2 w-full">
-              <InputText label={'Challan No'} type="text" value={form.challanNo} handleOnChange={e => setForm({ ...form, challanNo: e.target.value })} className="input" required />
+              <InputText label={'Challan No'} type="text" value={form.challanNo} 
+handleOnChange={e => handleChange('challanNo', e.target.value)}
+hasError={!!errors.challanNo}
+
+className="input" required />
             </div>
             <div className="w-full">
               <SelectDropdown
@@ -132,7 +165,9 @@ const ChallanCreatePage = () => {
                 optionLabel={v => `${v.vehicleNumber} - ${v.driverName}`} // Optional if dynamic
                 optionValue="_id"
                 placeholder="Select Vehicle"
-                required
+                hasError={!!errors.vehicleId}
+
+                
               />
             </div>
           </div>
@@ -141,7 +176,10 @@ const ChallanCreatePage = () => {
             <div className=" w-full">
               <InputText type="date" label={'Dispatch Date'} value={form.dispatchDate} handleOnChange={e => setForm({ ...form, dispatchDate: e.target.value })} />
             </div>
-            <InputText type="text" label={'Route Details'} value={form.routeDetails} handleOnChange={e => setForm({ ...form, routeDetails: e.target.value })} />
+            <InputText type="text" label={'Route Details'} value={form.routeDetails} 
+            handleOnChange={e => handleChange('routeDetails', e.target.value)}
+hasError={!!errors.routeDetails}
+            />
           </div>
           
           <div className="mb-2 flex flex-col gap-1">
@@ -171,9 +209,9 @@ const ChallanCreatePage = () => {
             </div>
           )}
 
-          <div className="flex pt-5 justify-center">
+          <div className="flex justify-end mt-6">
 
-            <Button type="submit" className="btn btn-primary w-sm ">Create Challan & Continue</Button>
+            <Button type="submit" className="btn btn-primary w-sm ">Save & Continue</Button>
           </div>
         </form>
       </div>

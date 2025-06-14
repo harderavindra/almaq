@@ -103,30 +103,35 @@ export const logoutUser = (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    console.log("Page")
-    const { page = 1, limit = 10, search = '' } = req.query;
-    const query = {
-      $or: [
-        { firstName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ],
-    };
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+    const search = req.query.search?.trim() || '';
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const query = search
+      ? {
+          $or: [
+            { firstName: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+          ],
+        }
+      : {};
+
+    const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
       User.find(query)
-        .select('-password')
+        .select('-password') // Avoid exposing password hashes
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(limit)
+        .sort({ createdAt: -1 }), // Optional: newest users first
       User.countDocuments(query),
     ]);
 
     res.status(200).json({
       users,
       total,
-      page: parseInt(page),
-      totalPages: Math.ceil(total / parseInt(limit)),
+      page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error('Error fetching users with pagination:', error);

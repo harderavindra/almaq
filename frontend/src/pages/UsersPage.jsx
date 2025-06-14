@@ -9,6 +9,7 @@ import ProfilePage from '../components/user/ProfilePage';
 import IconButton from '../components/common/IconButton';
 import { FiPlus } from 'react-icons/fi';
 import RegisterUserForm from '../components/user/RegisterUserForm';
+import Pagination from '../components/Pagination';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -107,30 +108,13 @@ const UsersPage = () => {
                 ))}
               </div>
 
-              <div className="mt-6 flex justify-center items-center gap-4">
-                <button
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                  className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                >
-                  Prev
-                </button>
-
-                <span className="font-semibold">
-                  Page {page} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-
-
-
+              <div className="mt-6 flex justify-center">
+  <Pagination
+    currentPage={page}
+    totalPages={totalPages}
+    onPageChange={handlePageChange}
+  />
+</div>
             </div>
           )}
         

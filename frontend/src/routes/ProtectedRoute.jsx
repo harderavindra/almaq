@@ -1,10 +1,13 @@
+import { FiRefreshCw } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className='w-full h-screen flex items-center justify-center'>
+    <FiRefreshCw className='animate-spin' />
+  </div>;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

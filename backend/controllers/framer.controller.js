@@ -3,7 +3,6 @@ import Farmer from "../models/Farmer.js";
 export const getLatestFarmers = async (req, res) => {
   try {
     const { search, state, district, taluka, city } = req.query;
-    console.log(req.query)
 
     // Build dynamic query
     const query = {};
@@ -40,8 +39,9 @@ export const createFarmer = async (req, res) => {
       firstName, lastName, gender, contactNumber,
       idNumber, state, district, taluka, city, address
     } = req.body;
-
+    
     if (!firstName || !lastName || !contactNumber) {
+      console.log(req.body,'req.body2')
       return res.status(400).json({ success: false, message: "Required fields missing" });
     }
 
@@ -51,9 +51,13 @@ export const createFarmer = async (req, res) => {
     });
 
     res.status(201).json({ success: true, data: farmer });
-  } catch (err) {
-    console.error("Error creating farmer:", err);
-    res.status(500).json({ success: false, message: err.message || "Internal server error" });
+  } catch (error) {
+   if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: 'Validation failed', errors: messages });
+    }
+
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

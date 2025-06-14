@@ -1,27 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import InputText from '../components/common/InputText';
 import Button from '../components/common/Button';
 import OrderSidebar from '../components/layout/OrderSidebar';
-import { FiPlus, FiTrash } from 'react-icons/fi';
-import IconButton from '../components/common/IconButton';
-import SelectDropdown from '../components/common/SelectDropdown';
-import AddFarmer from '../components/order/AddFarmer';
-import SearchableFarmerSelect from '../components/common/SearchableFarmerSelect';
-import { useNavigate } from 'react-router-dom';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import SearchableDepartmentSelect from '../components/order/SearchableDepartmentSelect';
+import {
+  validateDropdown,
+  validateOrderRef,
+  validateRequired,
+  validateDate,
+} from '../utils/validators';
 
 const OrderCreatePage = () => {
   const navigate = useNavigate();
 
   const [departments, setDepartments] = useState([]);
-  const [farmers, setFarmers] = useState([]);
-  const [plants, setPlants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showAddFarmer, setShowAddFarmer] = useState(false);
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [showAddFarmer, setShowAddFarmer] = useState(false);
 
   const [form, setForm] = useState({
     departmentId: '',
@@ -30,21 +28,26 @@ const OrderCreatePage = () => {
     orderLetterNumber: '',
     contactPerson: '',
     contactNumber: '',
-
   });
+
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [errors, setErrors] = useState({});
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const [deptRes, orderNumberRes] = await Promise.all([
           api.get('/departments'),
-          api.get('/utility/generate-number?type=ORD')
+          api.get('/utility/generate-number?type=ORD'),
         ]);
 
         setDepartments(deptRes.data.data);
-
-        setForm(prev => ({ ...prev, orderRefNo: orderNumberRes.data.number, orderDate: new Date().toISOString().split('T')[0] }));
+        setForm((prev) => ({
+          ...prev,
+          orderRefNo: orderNumberRes.data.number,
+          orderDate: new Date().toISOString().split('T')[0],
+        }));
         setMessage({ type: 'success', text: 'Data loaded successfully' });
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -57,49 +60,64 @@ const OrderCreatePage = () => {
     fetchData();
   }, []);
 
-
-
+  const validateField = (field, value) => {
+    switch (field) {
+      case 'departmentId':
+        return validateDropdown(value, 'Department');
+      case 'orderDate':
+        return validateRequired(value, 'Order Date') || validateDate(value, 'Order Date');
+      case 'orderRefNo':
+        return validateRequired(value, 'Order Reference Number') || validateOrderRef(value);
+      case 'orderLetterNumber':
+        return validateRequired(value, 'Order Letter Number');
+      case 'contactPerson':
+        return validateRequired(value, 'Contact Person');
+      case 'contactNumber':
+        return validateRequired(value, 'Contact Number');
+      default:
+        return null;
+    }
+  };
 
   const handleChange = (field, value) => {
-    if (field === 'departmentId') {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
+    const errorMessage = validateField(field, value);
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [field]: errorMessage,
+    }));
+
+    if (field === 'departmentId') {
       const selectedDepartment = departments.find((d) => d._id === value);
-      setForm({
-        ...form,
+      setForm((prev) => ({
+        ...prev,
         departmentId: value,
         contactPerson: selectedDepartment?.contactPerson || '',
         contactNumber: selectedDepartment?.contactNumber || '',
-      });
+      }));
       setSelectedDistrict(selectedDepartment?.district || '');
-      console.log(selectedDepartment.district)
-
-    } else {
-      setForm({
-        ...form,
-        [field]: value,
-      });
     }
   };
+
   const validateForm = () => {
-    // Basic validation
-    if (!form.departmentId) {
-      setMessage({ type: 'error', text: 'Please select a department' });
-      return false;
-    }
+    const fields = ['departmentId', 'orderDate', 'orderRefNo', 'orderLetterNumber', 'contactPerson', 'contactNumber'];
+    const newErrors = {};
 
-    if (!form.orderRefNo) {
-      setMessage({ type: 'error', text: 'Order reference is required' });
-      return false;
-    }
+    fields.forEach((field) => {
+      const error = validateField(field, form[field]);
+      if (error) newErrors[field] = error;
+    });
 
-
-
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -110,12 +128,9 @@ const OrderCreatePage = () => {
       setMessage({ type: 'success', text: 'Order created successfully' });
 
       const newOrderId = response.data.orderId;
-
       navigate(`/orders/${newOrderId}/edit`, {
         state: { successMessage: 'Order created as draft. Add farmers now.' },
       });
-
-
     } catch (error) {
       console.error(error);
       const errorMsg = error.response?.data?.message || 'Failed to create order';
@@ -127,42 +142,45 @@ const OrderCreatePage = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-      <OrderSidebar activeStatus={'Add'} />
+      <OrderSidebar activeStatus="Add" />
 
       <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl relative">
-        <StatusMessageWrapper
-          loading={isLoading}
-          success={message.type === 'success' ? message.text : ''}
-          error={message.type === 'error' ? message.text : ''}
-          className="sticky top-0 z-10"
-
-        />
-        <h2 className="text-3xl font-bold mb-4">Add Orders</h2>
+        <div className="flex justify-between">
+          <h2 className="text-3xl font-bold mb-4">Add Orders</h2>
+          <StatusMessageWrapper
+            loading={isLoading}
+            success={message.type === 'success' ? message.text : ''}
+            error={message.type === 'error' ? message.text : ''}
+            className="sticky top-0 z-10"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex gap-8">
-            <div className='w-full'>
-
+            <div className="w-full">
               <SearchableDepartmentSelect
                 label="Department *"
                 onChange={(id, deptObj) => {
+                  handleChange('departmentId', id);
                   setForm((prev) => ({
                     ...prev,
-                    departmentId: id,
                     contactPerson: deptObj.contactPerson || '',
                     contactNumber: deptObj.contactNumber || '',
                   }));
                   setSelectedDistrict(deptObj.district || '');
                 }}
+                hasError={!!errors.departmentId}
+                errorMessage={errors.departmentId}
               />
             </div>
 
             <InputText
               label="Order Date"
-              type='date'
+              type="date"
               value={form.orderDate}
               handleOnChange={(e) => handleChange('orderDate', e.target.value)}
-              required
+              hasError={!!errors.orderDate}
+              errorMessage={errors.orderDate}
             />
           </div>
 
@@ -171,13 +189,16 @@ const OrderCreatePage = () => {
               label="Order Reference Number *"
               value={form.orderRefNo}
               handleOnChange={(e) => handleChange('orderRefNo', e.target.value)}
-              required
+              hasError={!!errors.orderRefNo}
+              errorMessage={errors.orderRefNo}
             />
 
             <InputText
               label="Order Letter Number"
               value={form.orderLetterNumber}
               handleOnChange={(e) => handleChange('orderLetterNumber', e.target.value)}
+              hasError={!!errors.orderLetterNumber}
+              errorMessage={errors.orderLetterNumber}
             />
           </div>
 
@@ -186,13 +207,18 @@ const OrderCreatePage = () => {
               label="Contact Person"
               value={form.contactPerson}
               handleOnChange={(e) => handleChange('contactPerson', e.target.value)}
+              hasError={!!errors.contactPerson}
+              errorMessage={errors.contactPerson}
             />
             <InputText
               label="Contact Number"
               value={form.contactNumber}
               handleOnChange={(e) => handleChange('contactNumber', e.target.value)}
+              hasError={!!errors.contactNumber}
+              errorMessage={errors.contactNumber}
             />
           </div>
+
           <div className="flex justify-end mt-6">
             <Button
               type="submit"
@@ -202,15 +228,8 @@ const OrderCreatePage = () => {
               {isLoading ? 'loading...' : 'Save & Continue'}
             </Button>
           </div>
-
-
-
-
-
         </form>
       </div>
-
-
     </div>
   );
 };
