@@ -25,7 +25,6 @@ const ChallanCreatePage = () => {
   const [form, setForm] = useState({
     challanNo: '',
     vehicleId: '',
-    dispatchDate: '',
     routeDetails: '',
     dispatchDate: today,
     notes: '',
