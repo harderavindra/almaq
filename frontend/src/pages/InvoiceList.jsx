@@ -64,7 +64,7 @@ const isNextDisabled = !maxDate ||
         'Pending': 'clock',
         'Paid': 'done',
         'Partially Paid': 'check',
-        Cheque: <FaMoneyBillWave />,
+        Cheque: <FaMoneyBillWave />, 
     };
 
     const fetchInvoices = async () => {
