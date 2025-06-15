@@ -90,6 +90,7 @@ export const getFarmers = async (req, res) => {
     const totalFarmers = await Farmer.countDocuments(query);
     const farmers = await Farmer.find(query)
       .skip((page - 1) * limit)
+      .sort({ createdAt: -1 })
       .limit(limit);
 
     res.json({

@@ -8,6 +8,7 @@ import Pagination from '../common/Pagination';
 import Button from '../common/Button';
 import LocationDropdowns from '../common/LocationDropdowns';
 import SelectDropdown from '../common/SelectDropdown';
+import { validateRequired } from '../../utils/validators';
 
 const FarmerMaster = () => {
     const [data, setData] = useState([]);
@@ -21,19 +22,20 @@ const FarmerMaster = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
     const [locationFilter, setLocationFilter] = useState({});
+    const [errors, setErrors] = useState({})
 
     const ITEMS_PER_PAGE = 20;
 
     const columns = isModalOpen
         ? [
-              { header: 'First Name', key: 'firstName, lastName, name' },
-              { header: 'Contact', key: 'contactNumber' }
-          ]
+            { header: 'First Name', key: 'firstName, lastName' },
+            { header: 'Contact', key: 'contactNumber' }
+        ]
         : [
-              { header: 'Name', key: 'firstName, lastName' },
-              { header: 'Contact', key: 'contactNumber' },
-              { header: 'Address', key: 'address, city, taluka, district, state' }
-          ];
+            { header: 'Name', key: 'firstName, lastName' },
+            { header: 'Contact', key: 'contactNumber' },
+            { header: 'Address', key: 'address, city, taluka, district, state' }
+        ];
 
     // Debounce search input
     useEffect(() => {
@@ -74,7 +76,21 @@ const FarmerMaster = () => {
     useEffect(() => {
         fetchData();
     }, [currentPage, debouncedSearchTerm, locationFilter]);
+ const handleInputChange = (field) => (e) => {
+        const value = e.target.value;
 
+        // Update form data
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+
+        // Update error for that field
+        setErrors((prev) => ({
+            ...prev,
+            [field]: validateRequired(value),
+        }));
+    };
     const onDelete = async id => {
         if (window.confirm('Are you sure you want to delete this farmer?')) {
             setIsLoading(true);
@@ -102,6 +118,28 @@ const FarmerMaster = () => {
     };
 
     const onSave = async () => {
+         const requiredFields = ['firstName', 'lastName', 'gender','contactNumber', 'state', 'district',  'taluka', 'city', 'idNumber', 'address'];
+                const errors = {};
+        
+                // Clear previous errors
+                setErrors({});
+        
+        
+        
+                requiredFields.forEach((field) => {
+                    const error = validateRequired(formData[field]);
+                    if (error) {
+                        errors[field] = error;
+                    }
+                });
+        
+                setErrors(errors);
+        
+                if (Object.keys(errors).length > 0) {
+                    setShowMessage({ type: 'error', text: 'Please fill in all required fields.' });
+                    console.warn('Validation errors:', errors);
+                    return;
+                }
         try {
             if (currentItem?._id) {
                 await api.put(`/farmers/${currentItem._id}`, formData);
@@ -121,16 +159,12 @@ const FarmerMaster = () => {
 
     return (
         <>
-            {showMessage.text && (
-                <div className={`mb-4 p-2 rounded ${showMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {showMessage.text}
-                </div>
-            )}
+           
 
             <div className="flex flex-col md:flex-row w-full">
                 <div className="w-full transition-all duration-500">
                     <div className="flex justify-between gap-10 items-center mb-4">
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 items-end">
                             <InputText
                                 placeholder="Search..."
                                 value={searchTerm}
@@ -153,17 +187,35 @@ const FarmerMaster = () => {
                                     hideLabel={true}
                                 />
                             )}
+                            {(searchTerm || Object.keys(locationFilter).length > 0) && (
+
+                                <div className='w-12 '>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setLocationFilter({});
+                                            setCurrentPage(1);
+                                        }}
+                                        className={'h-10'}
+                                    >
+                                        <FiX />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <IconButton
                             icon={<FiPlus />}
-                            label="Add Farmer"
+                            label="Add"
                             onClick={() => {
                                 setCurrentItem(null);
                                 setFormData({});
+
                                 setIsModalOpen(true);
                             }}
                         />
+
                     </div>
 
                     <DataTable
@@ -211,13 +263,16 @@ const FarmerMaster = () => {
                                     type="text"
                                     label="First Name"
                                     value={formData.firstName || ''}
-                                    handleOnChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    handleOnChange={handleInputChange('firstName')}
+                                    hasError={errors.firstName}
                                 />
                                 <InputText
                                     type="text"
                                     label="Last Name"
                                     value={formData.lastName || ''}
-                                    handleOnChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                    handleOnChange={handleInputChange('lastName')}
+                                    hasError={errors.lastName}
+
                                 />
                                 <SelectDropdown
                                     name="gender"
@@ -227,13 +282,15 @@ const FarmerMaster = () => {
                                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                                     placeholder="Select Gender"
                                     className="w-full"
+                                    hasError={errors.gender}
                                 />
                                 <InputText
                                     type="text"
                                     label="Contact Number"
                                     value={formData.contactNumber || ''}
-                                    handleOnChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                                    required
+                                    handleOnChange={handleInputChange('contactNumber')}
+                                    hasError={errors.contactNumber}
+
                                 />
                             </div>
 
@@ -249,6 +306,12 @@ const FarmerMaster = () => {
                                 defaultTaluka={formData.taluka}
                                 defaultCity={formData.city}
                                 listStyle="grid"
+                                 errors={{
+                                    state: errors.state ,
+                                    district:errors.district,
+                                    taluka:  errors.taluka ,
+                                    city:  errors.city ,
+                                }}
                             />
 
                             <div className="grid grid-cols-2 gap-4">
@@ -256,14 +319,16 @@ const FarmerMaster = () => {
                                     label="Address Line"
                                     type="text"
                                     value={formData.address || ''}
-                                    handleOnChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    handleOnChange={handleInputChange('address')}
+                                    hasError={errors.address}
+
                                 />
                                 <InputText
                                     type="text"
                                     label="Identification Number"
                                     value={formData.idNumber || ''}
-                                    handleOnChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
-                                    required
+                                    handleOnChange={handleInputChange('idNumber')}
+                                    hasError={errors.idNumber}
                                 />
                             </div>
 

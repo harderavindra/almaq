@@ -43,7 +43,7 @@ const locationData = {
 
 const LocationDropdowns = ({
     onChange,
-    defaultState = '',
+    defaultState = 'Maharashtra',
     defaultDistrict,
     defaultTaluka,
     defaultCity = '',
