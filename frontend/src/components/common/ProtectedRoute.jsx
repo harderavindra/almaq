@@ -6,8 +6,13 @@ import { hasAccess } from '../../utils/permissions';
 const ProtectedRoute = ({ allowedRoles = [], children }) => {
   const { user, isAuthenticated, loading } = useContext(AuthContext);
 
-  if (loading) return null; // or a loader/spinner
-
+if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <FiRefreshCw className="animate-spin" />
+      </div>
+    );
+  }
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }

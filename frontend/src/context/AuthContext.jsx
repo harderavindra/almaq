@@ -15,9 +15,8 @@ const login = async (credentials) => {
 
     // Update the context/state
     setUser(res.data.data);
-    console.log(res.data)
 
-    return { success: true };
+    return { success: true }; 
   } catch (err) {
    if (!err.response) {
       return {
@@ -82,6 +81,7 @@ const login = async (credentials) => {
       setUser(res.data.data); // Or fetch user info if only token returned
     } catch {
       setUser(null);
+      
     }
   };
 
