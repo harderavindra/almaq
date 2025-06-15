@@ -14,7 +14,8 @@ const login = async (credentials) => {
     });
 
     // Update the context/state
-    setUser(res.data);
+    setUser(res.data.data);
+    console.log(res.data)
 
     return { success: true };
   } catch (err) {
