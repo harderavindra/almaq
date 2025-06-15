@@ -13,8 +13,7 @@ const SidebarMaster = ({ activeTab }) => {
     ];
 
     return (
-        <div className="w-full md:w-52">
-            <h3 className="text-lg font-bold mb-4">Master Data</h3>
+    <div className="w-60 h-full py-10 sticky top-0">
             <ul className="space-y-2">
                 {items.map((item) => (
                     <li key={item.tab}>

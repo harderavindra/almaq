@@ -26,7 +26,7 @@ const DataTable = ({ columns, data, isLoading, onEdit,isModalOpen, onDelete, emp
                     {data.map(item => (
                         <tr key={item._id} className="hover:bg-gray-50 odd:bg-white even:bg-gray-50">
                             {columns.map(col => (
-                                <td key={`${item._id}-${col.key}`} className="px-4 py-4">
+                                <td key={`${item._id}-${col.key}`} className="px-4 py-4 capitalize">
                                     {col.render
                                         ? col.render(item)
                                         : col.key.includes(',')

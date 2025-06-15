@@ -205,7 +205,7 @@ const isNextDisabled = !maxDate ||
                                             <td className="p-2 text-blue-600 underline cursor-pointer" onClick={() => console.log('Open Invoice', invoice._id)}>{invoice.invoiceNumber}</td>
                                             <td className="p-3">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
                                             <td className="p-2">{invoice.paymentDate ? new Date(invoice.paymentDate).toLocaleDateString() : '-'}</td>
-                                            <td className="p-2">{invoice.farmerId?.name || group.department}</td>
+                                            <td className="p-2">{invoice.farmerId?.firstName || group.department}</td>
                                             <td className="p-2">{invoice.agronomist || '-'}</td>
                                             <td className="p-2 font-semibold"><FaRupeeSign className="inline" /> {invoice.totalAmount}</td>
                                             <td className="p-2">{invoice.totalPlants}</td>

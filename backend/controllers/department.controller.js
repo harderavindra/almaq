@@ -7,17 +7,32 @@ import User from '../models/User.js';
 export const getDepartments = async (req, res) => {
   try {
     const { page = 1, limit = 5 } = req.query;
+
+    // Validate query params
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    if (isNaN(pageNumber) || isNaN(limitNumber) || pageNumber <= 0 || limitNumber <= 0) {
+      return res.status(400).json({ message: 'Invalid page or limit parameter' });
+    }
+
     const departments = await Department.find()
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .skip((pageNumber - 1) * limitNumber)
+
+      .sort({createdAt: -1})
+      .limit(limitNumber);
+
     const total = await Department.countDocuments();
+    console.log("departments", departments)
     res.status(200).json({
       data: departments,
-      totalPages: Math.ceil(total / limit),
-      currentPage: Number(page),
+      totalPages: Math.ceil(total / limitNumber),
+      currentPage: pageNumber,
     });
+
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching departments', error });
+    console.error('Error fetching departments:', error.message);
+    res.status(500).json({ message: 'Error fetching departments', error: error.message });
   }
 };
 
