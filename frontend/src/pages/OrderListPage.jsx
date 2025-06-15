@@ -130,7 +130,7 @@ const OrderListPage = () => {
                                         <td className="px-3 py-4">{o.departmentId?.name}</td>
                                         <td className="px-3 py-4">{o.contactPerson}</td>
                                         <td className="px-3 py-4">
-                                            <div className='flex gap-3'>
+                                            <div className='flex gap-3'> 
 
                                                 <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
                                                 <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}/edit`)} icon={<FiPenTool size="18" />} />
