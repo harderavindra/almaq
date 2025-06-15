@@ -169,24 +169,43 @@ export const refreshToken = async (req, res) => {
 export const logoutUser = async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
-    
-    // Clear the refresh token from database if it exists
+
     if (refreshToken) {
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
       await User.findByIdAndUpdate(decoded.userId, { $set: { refreshToken: null } });
     }
 
-    // Clear cookies
-    res.clearCookie('token')
-      .clearCookie('refreshToken')
-      .json({ success: true, message: 'Logged out successfully' });
+    // Clear cookies with correct options
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    return res.json({ success: true, message: 'Logged out successfully' });
   } catch (err) {
     console.error('[Logout Error]', err);
-    // Even if there's an error, we still want to clear cookies
-    res.clearCookie('token')
-      .clearCookie('refreshToken')
-      .status(500)
-      .json({ success: false, message: 'Error during logout' });
+
+    // Still clear cookies on error
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
+    return res.status(500).json({ success: false, message: 'Error during logout' });
   }
 };
 
