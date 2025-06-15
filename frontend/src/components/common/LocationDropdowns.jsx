@@ -38,127 +38,122 @@ const locationData = {
         "Bhandara": ["Bhandara", "Lakhandur", "Lakhani", "Mohadi", "Pauni", "Sakoli", "Tumsar"],
         "Chandrapur": ["Ballarpur", "Bhadravati", "Brahmapuri", "Chandrapur", "Chimur", "Gondpipri", "Mul", "Nagbhid", "Pombhurna", "Rajura", "Saoli", "Sindewahi", "Warora"],
         "Gadchiroli": ["Aheri", "Armori", "Bhamragad", "Chamorshi", "Dhanora", "Etapalli", "Gadchiroli", "Korchi", "Kurkheda", "Mulchera", "Sironcha"]
-    },
-      Gujarat:{
-      "Amreli":["Amreli"]
     }
 };
 
 const LocationDropdowns = ({
-    onChange,
-    defaultState = '',
-    defaultDistrict,
-    defaultTaluka,
-    defaultCity = '',
-    className = '',
-    showCityInput = true,
-    hideLabel = false,
-    listStyle = 'flex',
-    errors = {} 
+  onChange,
+  defaultState = '',
+  defaultDistrict = '',
+  defaultTaluka = '',
+  defaultCity = '',
+  className = '',
+  showCityInput = true,
+  hideLabel = false,
+  listStyle = 'flex',
+  errors = {}
 }) => {
-    const [selectedState, setSelectedState] = useState(defaultState);
-    const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict);
-    const [selectedTaluka, setSelectedTaluka] = useState(defaultTaluka);
-    const [selectedCity, setSelectedCity] = useState(defaultCity);
-    const listClass = listStyle == 'flex' ? 'flex flex-col' : 'grid grid-cols-2';
+  const [selectedState, setSelectedState] = useState(defaultState);
+  const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict);
+  const [selectedTaluka, setSelectedTaluka] = useState(defaultTaluka);
+  const [selectedCity, setSelectedCity] = useState(defaultCity);
 
-    useEffect(() => {
-        setSelectedState(defaultState);
-        setSelectedDistrict(defaultDistrict);
-        setSelectedTaluka(defaultTaluka);
-        console.log(defaultTaluka)
-        setSelectedCity(defaultCity);
-    }, [defaultState, defaultDistrict, defaultTaluka, defaultCity]);
-    useEffect(() => {
-        onChange({
-            state: selectedState,
-            district: selectedDistrict,
-            taluka: selectedTaluka,
-            city: selectedCity
-        });
-    }, [selectedState, selectedDistrict, selectedTaluka, selectedCity]);
+  const listClass = listStyle === 'flex' ? 'flex flex-col' : 'grid grid-cols-2';
 
-    const stateOptions = Object.keys(locationData).map(state => ({
-        label: state,
-        value: state
-    }));
+  useEffect(() => {
+    setSelectedState(defaultState);
+    setSelectedDistrict(defaultDistrict);
+    setSelectedTaluka(defaultTaluka);
+    setSelectedCity(defaultCity);
+  }, [defaultState, defaultDistrict, defaultTaluka, defaultCity]);
 
-    const districtOptions = selectedState
-        ? Object.keys(locationData[selectedState]).map(district => ({
-            label: district,
-            value: district
-        }))
-        : [];
+  useEffect(() => {
+    onChange({
+      state: selectedState,
+      district: selectedDistrict,
+      taluka: selectedTaluka,
+      city: selectedCity,
+    });
+  }, [selectedState, selectedDistrict, selectedTaluka, selectedCity]);
 
-    const talukaOptions = selectedDistrict
-        ? locationData[selectedState][selectedDistrict].map(taluka => ({
-            label: taluka,
-            value: taluka
-        }))
-        : [];
+  const stateOptions = Object.keys(locationData).map((state) => ({
+    label: state,
+    value: state,
+  }));
 
-    return (
-        <div className={`${listClass} gap-3 ${className} w-full`}>
+  const districtOptions = selectedState && locationData[selectedState]
+    ? Object.keys(locationData[selectedState]).map((district) => ({
+        label: district,
+        value: district,
+      }))
+    : [];
 
-            <SelectDropdown
-                label={hideLabel ? '' : "State"}
-                value={selectedState}
-                onChange={(e) => {
-                    setSelectedState(e.target.value);
-                    setSelectedDistrict('');
-                    setSelectedTaluka('');
-                      setLocationErrors((prev) => ({ ...prev, state: undefined }));
+  const talukaOptions = selectedState &&
+    selectedDistrict &&
+    locationData[selectedState] &&
+    locationData[selectedState][selectedDistrict]
+    ? locationData[selectedState][selectedDistrict].map((taluka) => ({
+        label: taluka,
+        value: taluka,
+      }))
+    : [];
 
-                }}
-                options={stateOptions}
-                placeholder="Select State"
-                className='w-full'
-                  hasError={errors.state}
+  return (
+    <div className={`${listClass} gap-3 ${className} w-full`}>
+      <SelectDropdown
+        label={hideLabel ? '' : 'State'}
+        value={selectedState}
+        onChange={(e) => {
+          setSelectedState(e.target.value);
+          setSelectedDistrict('');
+          setSelectedTaluka('');
+        }}
+        options={stateOptions}
+        placeholder="Select State"
+        className="w-full"
+        hasError={errors.state}
+      />
 
-            />
+      {selectedState && (
+        <SelectDropdown
+          label={hideLabel ? '' : 'District'}
+          value={selectedDistrict}
+          onChange={(e) => {
+            setSelectedDistrict(e.target.value);
+            setSelectedTaluka('');
+          }}
+          options={districtOptions}
+          placeholder="Select District"
+          className="w-full"
+          hasError={errors.district}
+        />
+      )}
 
-            {selectedState && (
-                <>
-                <SelectDropdown
-                    label={hideLabel ? '' : "District"}
-                    value={selectedDistrict}
-                    onChange={(e) => {
-                        setSelectedDistrict(e.target.value);
-                        setSelectedTaluka('');
-    setLocationErrors((prev) => ({ ...prev, district: undefined }));
+      {selectedDistrict && (
+        <SelectDropdown
+          label={hideLabel ? '' : 'Taluka'}
+          value={selectedTaluka}
+          onChange={(e) => setSelectedTaluka(e.target.value)}
+          options={talukaOptions}
+          placeholder="Select Taluka"
+          className="w-full"
+          hasError={errors.taluka}
+        />
+      )}
 
-                    }}
-                    options={districtOptions}
-                    placeholder="Select District"
-                    className='w-full'
-                    hasError={errors.district}
-
-                />
-                </>
-            )}
-
-            {selectedDistrict && (
-                <SelectDropdown
-                    label={hideLabel ? '' : "Taluka"}
-                    value={selectedTaluka}
-                    onChange={(e) => setSelectedTaluka(e.target.value)}
-                    options={talukaOptions}
-                    placeholder="Select Taluka"
-                    className='w-full'
-                    hasError={errors.taluka}
-                />
-            )}
-            {showCityInput && (
-                <InputText label={"City/Village"}
-                    name={hideLabel ? '' : "city"}
-                    placeholder="Enter City or Village"
-                    handleOnChange={(e) => { setSelectedCity(e.target.value); console.log(e.target.value) }}
-                    value={selectedCity}
-                    className='w-full'
-                     hasError={errors.city}
-                />)}
-        </div>
-    );
+      {showCityInput && (
+        <InputText
+          label={hideLabel ? '' : 'City/Village'}
+          name="city"
+          placeholder="Enter City or Village"
+          handleOnChange={(e) => setSelectedCity(e.target.value)}
+          value={selectedCity}
+          className="w-full"
+          hasError={errors.city}
+        />
+      )}
+    </div>
+  );
 };
 
 export default LocationDropdowns;
