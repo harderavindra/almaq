@@ -28,11 +28,13 @@ const OrderEditPage = () => {
   const [plants, setPlants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [selectedState, setSelectedState] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedTaluka, setSelectedTaluka] = useState('');
   const [addNewFarmer, setAddNewFarmer] = useState(false);
   const [newFarmer, setNewFarmer] = useState({
     gender: 'male',
+
   });
   const [summary, setSummary] = useState({ totalFarmers: 0, totalQuantity: 0, totalAmount: 0 });
   const [totalPages, setTotalPages] = useState(1);
@@ -41,7 +43,7 @@ const OrderEditPage = () => {
   const [errors, setErrors] = useState({});
   const [itemErrors, setItemErrors] = useState({});
   const [farmerErrors, setFarmerErrors] = useState({});
-  const ITEMS_PER_PAGE = 2;
+  const ITEMS_PER_PAGE = 50;
   const orderStatuses = ['Draft', 'Submitted', 'Approved', 'Delivered', 'Cancelled'];
 
   const canEdit = hasAccess(user?.role, ['admin', 'manager']);
@@ -88,15 +90,16 @@ const OrderEditPage = () => {
           search: searchTerm || undefined, // optional
         },
       });
-      console.log(res.data)
       setOrder(res.data.order);
       setItems(res.data.items); // <- Add this line
       setSummary(res.data.summary);
       setTotalPages(res.data.pagination.totalPages || 1);
       setCurrentPage(res.data.pagination.currentPage || 1);
 
+      setSelectedState(res.data.order.departmentId.state);
       setSelectedDistrict(res.data.order.departmentId.district);
       setSelectedTaluka(res.data.order.departmentId.taluka);
+      console.log(res.data.order,"////////////",res.data.order.departmentId.state)
       if (successMessage) {
         setMessage({ type: 'success', text: successMessage });
       }
@@ -277,7 +280,7 @@ const OrderEditPage = () => {
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
     try {
-      await api.put(`/orders/${id}/status`, { status: newStatus });
+      await api.put(`/orders/${orderId}/status`, { status: newStatus });
       setOrder(prev => ({ ...prev, status: newStatus }));
       fetchOrderDetails(); // Refresh order data
 
@@ -507,6 +510,7 @@ const OrderEditPage = () => {
                       ...locationData // Directly updates state, district, taluka, city
                     }));
                   }}
+                  defaultState={selectedState}
                   defaultDistrict={selectedDistrict}
                   defaultTaluka={selectedTaluka}
                   className='flex-row gap-4'
@@ -530,7 +534,9 @@ const OrderEditPage = () => {
                   hasError={!!itemErrors.farmerId}
 
                 />
-                <IconButton disabled={addNewFarmer} onClick={() => setAddNewFarmer(true)} icon={<FiPlus size={24} />} label='' className={'w-14'} />
+                <IconButton disabled={addNewFarmer} onClick={() => setAddNewFarmer(true)
+                  
+                } icon={<FiPlus size={24} />} label='' className={'w-14'} />
               </div>
               <div className='w-full'>
 

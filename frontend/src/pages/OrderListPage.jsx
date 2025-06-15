@@ -9,11 +9,13 @@ import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import StatusSidebar from '../components/layout/StatusSidebar';
 import { OrderStatusIcon } from '../utils/constants';
 import TableSkeletonRows from '../components/common/TableSkeletonRows';
+import { useAuth } from '../context/AuthContext';
 
 const OrderListPage = () => {
     const navigate = useNavigate()
     const location = useLocation();
     const successMessage = location.state?.successMessage;
+    const { user, logout, loading } = useAuth();
 
     const [orders, setOrders] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
@@ -114,11 +116,11 @@ const OrderListPage = () => {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                 <TableSkeletonRows
-      rowCount={5}
-      columnWidths={['6rem', '5rem', '8rem', '7rem', '6rem']}
-      hasActions={true}
-    />
+                                <TableSkeletonRows
+                                    rowCount={5}
+                                    columnWidths={['6rem', '5rem', '8rem', '7rem', '6rem']}
+                                    hasActions={true}
+                                />
                             ) : (
                                 orders.map((o) => (
                                     <tr key={o._id} className="even:bg-gray-100/70">
@@ -130,10 +132,19 @@ const OrderListPage = () => {
                                         <td className="px-3 py-4">{o.departmentId?.name}</td>
                                         <td className="px-3 py-4">{o.contactPerson}</td>
                                         <td className="px-3 py-4">
-                                            <div className='flex gap-3'> 
-
+                                            <div className='flex gap-3'>
+                                                {
+    (user.role === 'admin' || ['Draft', 'Submited'].includes(statusFilter)) ? (
+                                                        <IconButton
+                                                            label=''
+                                                            shape='pill'
+                                                            onClick={() => navigate(`/orders/${o._id}/edit`)}
+                                                            icon={<FiPenTool size="18" />}
+                                                        />
+                                                    ) : null
+                                                }
                                                 <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
-                                                <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}/edit`)} icon={<FiPenTool size="18" />} />
+
                                                 <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
                                             </div>
 
@@ -152,6 +163,7 @@ const OrderListPage = () => {
                 />
             </div>
         </div>
+
     );
 };
 

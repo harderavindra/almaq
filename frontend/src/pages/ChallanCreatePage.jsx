@@ -21,14 +21,14 @@ const ChallanCreatePage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-    const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     challanNo: '',
     vehicleId: '',
     routeDetails: '',
-    dispatchDate: today, 
+    dispatchDate: today,
     notes: '',
   });
 
@@ -69,7 +69,7 @@ const ChallanCreatePage = () => {
     fetchDropdownData();
   }, []);
 
- const validateField = (field, value) => {
+  const validateField = (field, value) => {
     switch (field) {
       case 'challanNo':
         return validateRequired(value, 'Challan No');
@@ -85,7 +85,7 @@ const ChallanCreatePage = () => {
   };
 
 
-   const validateForm = () => {
+  const validateForm = () => {
     const fields = ['challanNo', 'vehicleId', 'dispatchDate', 'routeDetails'];
     const newErrors = {};
 
@@ -114,12 +114,12 @@ const ChallanCreatePage = () => {
 
     try {
       const response = await api.post('/challans', form);
-      
+
       navigate(`/challans/${response.data.challan._id}/edit?status=${response.data.challan.status}`, {
         state: { success: 'Challan created successfully' }
       });
 
-    
+
     } catch (error) {
       console.error('Challan creation failed:', error);
       setErrorMessage(
@@ -131,19 +131,19 @@ const ChallanCreatePage = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
+    <div className="flex flex-col md:flex-row h-full  gap-10">
 
-     <StatusSidebar
-                     statuses={['Draft', 'Issued',  'Delivered', 'Cancelled']}
-       endpoint="/challans/status-counts"
-                      basePath="/challans"
-       addPath="/add-challan"
-     
-                     getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
-                     allowedRoles={['admin', 'manager']}
-                 />
-      <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
-     
+      <StatusSidebar
+        statuses={['Draft', 'Issued', 'Delivered', 'Cancelled']}
+        endpoint="/challans/status-counts"
+        basePath="/challans"
+        addPath="/add-challan"
+
+        getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
+        allowedRoles={['admin', 'manager']}
+      />
+            <div className="px-10 py-6 w-full  flex flex-col bg-white rounded-xl relative">
+
         <div className="flex justify-between">
           <h2 className="text-3xl font-bold mb-4">Add Challan</h2>
           <StatusMessageWrapper
@@ -156,11 +156,11 @@ const ChallanCreatePage = () => {
         <form onSubmit={handleSubmit} className="w-full">
           <div className="flex gap-10 justify-between ">
             <div className="mb-2 w-full">
-              <InputText label={'Challan No'} type="text" value={form.challanNo} 
-handleOnChange={e => handleChange('challanNo', e.target.value)}
-hasError={!!errors.challanNo}
+              <InputText label={'Challan No'} type="text" value={form.challanNo}
+                handleOnChange={e => handleChange('challanNo', e.target.value)}
+                hasError={!!errors.challanNo}
 
-className="input" required />
+                className="input" required />
             </div>
             <div className="w-full">
               <SelectDropdown
@@ -173,7 +173,7 @@ className="input" required />
                 placeholder="Select Vehicle"
                 hasError={!!errors.vehicleId}
 
-                
+
               />
             </div>
           </div>
@@ -182,12 +182,12 @@ className="input" required />
             <div className=" w-full">
               <InputText type="date" label={'Dispatch Date'} value={form.dispatchDate} handleOnChange={e => setForm({ ...form, dispatchDate: e.target.value })} />
             </div>
-            <InputText type="text" label={'Route Details'} value={form.routeDetails} 
-            handleOnChange={e => handleChange('routeDetails', e.target.value)}
-hasError={!!errors.routeDetails}
+            <InputText type="text" label={'Route Details'} value={form.routeDetails}
+              handleOnChange={e => handleChange('routeDetails', e.target.value)}
+              hasError={!!errors.routeDetails}
             />
           </div>
-          
+
           <div className="mb-2 flex flex-col gap-1">
             <label className='w-full'>Notes:</label>
             <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="border rounded-md border-gray-400 px-3 py-2 focus:border-blue-300 focus:outline-0 w-full" />

@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema(
             default: 'viewer',
         },
         isActive: {type: Boolean,default: true,},
+          // 🆕 For storing hashed refresh token
+    refreshToken: {
+      type: String,
+      select: false, // prevent exposing token
+    },
     },
     {
         timestamps: true,

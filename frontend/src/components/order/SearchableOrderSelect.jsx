@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiMapPin } from 'react-icons/fi';
+import { FiPlus, FiMapPin, FiRefreshCw } from 'react-icons/fi';
 import api from '../../api/axios';
 import LocationDropdowns from '../common/LocationDropdowns';
 
@@ -7,6 +7,8 @@ const SearchableOrderSelect = ({ label = 'Orders', onChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+  
   const [locationFilter, setLocationFilter] = useState({
     state: 'Maharashtra',
     district:  '',
@@ -38,7 +40,7 @@ const SearchableOrderSelect = ({ label = 'Orders', onChange }) => {
 
   const fetchDepartments = async () => {
     try {
-      console.log(locationFilter)
+      setIsLoading(true)
       const res = await api.get('/orders/search', {
         params: {
           search: searchTerm,
@@ -49,12 +51,15 @@ const SearchableOrderSelect = ({ label = 'Orders', onChange }) => {
       console.log(res)
     } catch (err) {
       console.error('Error fetching departments:', err);
+    }finally{
+      setIsLoading(false)
     }
   };
 
   return (
     <div className="relative flex flex-col gap-1 w-full" ref={dropdownRef}>
       <label className="text-sm font-medium">{label}</label>
+      <div className='relative'>
       <input
         type="text"
         value={searchTerm}
@@ -63,6 +68,11 @@ const SearchableOrderSelect = ({ label = 'Orders', onChange }) => {
         className="border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0"
         onFocus={() => {setShowDropdown(true);setSearchTerm('')}}
       />
+      {
+        isLoading &&
+      <FiRefreshCw className='animate-spin absolute top-3 right-5' />
+      }
+      </div>
 
       {showDropdown && (
         <div className="absolute top-[100%] z-10 w-2xl flex bg-white border border-gray-300 rounded-md shadow-lg max-h-[300px] overflow-hidden">

@@ -7,18 +7,19 @@ import { deleteFileFromGCS, generateSignedUploadUrl, generateSignedUrl } from '.
 
 import fs from 'fs';
 import { console } from 'inspector/promises';
+import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); 
+const __dirname = path.dirname(__filename);
 
 // @desc   Register new user
 export const registerUser = async (req, res) => {
-  const { firstName,lastName, gender, email, password, role,profilePic } = req.body;
+  const { firstName, lastName, gender, email, password, role, profilePic } = req.body;
   console.log("Registering user:", req.body);
 
   const userExists = await User.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  const user = await User.create({ firstName,lastName,gender, email, password, role, profilePic });
+  const user = await User.create({ firstName, lastName, gender, email, password, role, profilePic });
 
   if (user) {
     res.status(201).json({
@@ -38,61 +39,133 @@ export const registerUser = async (req, res) => {
 
 // @desc   Login user
 export const loginUser = async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
+  try {
+    const { email, password } = req.body;
 
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter both email and password.',
+      });
+    }
 
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+    const user = await User.findOne({ email }).select('+password +refreshToken');
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
 
-  res
-    .cookie('token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 15 * 60 * 1000, // 15 mins
-    })
-    .cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    })
-    .json({
-      _id: user._id,
-      firstName: user.firstName,
-      email: user.email,
-      role: user.role,
-      profilePic: user?.profilePic,
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = await bcrypt.hash(refreshToken, 10);
+    await user.save();
+
+    res
+      .cookie('token', accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 15 * 60 * 1000,
+      })
+      .cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .json({
+        success: true,
+        message: 'Login successful.',
+        data: {
+          _id: user._id,
+          firstName: user.firstName,
+          email: user.email,
+          role: user.role,
+          profilePic: user?.profilePic,
+        },
+      });
+  } catch (error) {
+    console.error('[Login Error]', error);
+    res.status(500).json({
+      success: false,
+      message: 'Something went wrong while logging in. Please try again.',
     });
+  }
 };
+
 
 
 
 export const refreshToken = async (req, res) => {
-  const refresh = req.cookies.refreshToken;
-  if (!refresh) return res.status(401).json({ message: 'No refresh token' });
+  const refresh = req.cookies?.refreshToken;
+  if (!refresh) {
+    return res.status(401).json({
+      success: false,
+      message: 'Session expired. Please log in again.',
+    });
+  }
 
   try {
     const decoded = jwt.verify(refresh, process.env.JWT_REFRESH_SECRET);
-    const newAccessToken = generateAccessToken(decoded.userId);
+    const user = await User.findById(decoded.userId).select('+refreshToken');
 
-    res.cookie('token', newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user || !(await bcrypt.compare(refresh, user.refreshToken))) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid session. Please log in again.',
+      });
+    }
 
-    res.json({ user });
+    const newAccessToken = generateAccessToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = await bcrypt.hash(newRefreshToken, 10);
+    await user.save();
+
+    res
+      .cookie('token', newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 15 * 60 * 1000,
+      })
+      .cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .json({
+        success: true,
+        message: 'Session refreshed.',
+        data: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName:user.lastName,
+          email: user.email,
+          role: user.role,
+          profilePic:user.profilePic
+        },
+      });
   } catch (err) {
-    return res.status(403).json({ message: 'Invalid or expired refresh token' });
+    console.error('[Refresh Error]', err);
+    return res.status(403).json({
+      success: false,
+      message: 'Session expired or invalid. Please log in again.',
+    });
   }
 };
-
 export const logoutUser = (req, res) => {
   res.clearCookie('token')
     .clearCookie('refreshToken')
@@ -109,11 +182,11 @@ export const getAllUsers = async (req, res) => {
 
     const query = search
       ? {
-          $or: [
-            { firstName: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
-          ],
-        }
+        $or: [
+          { firstName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ],
+      }
       : {};
 
     const skip = (page - 1) * limit;
@@ -141,8 +214,8 @@ export const getAllUsers = async (req, res) => {
 
 export const updateProfilePic = async (req, res) => {
   try {
-    const { profilePic,userId } = req.body;
-    console.log(userId,profilePic)
+    const { profilePic, userId } = req.body;
+    console.log(userId, profilePic)
 
     const user = await User.findByIdAndUpdate(userId, { profilePic }, { new: true });
 

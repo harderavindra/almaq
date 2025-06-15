@@ -23,24 +23,26 @@ const ChallanListPage = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [challans, setChallans] = useState([]);
     const query = new URLSearchParams(location.search);
-const statusFilter = query.get('status'); // "Draft", "Issued", etc.
+    const statusFilter = query.get('status'); // "Draft", "Issued", etc.
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-    setIsLoading(true);
-    api.get('/challans', {
-        params: statusFilter ? { status: statusFilter } : {}
-    })
-        .then(res => {
-            setChallans(res.data);
-            setIsLoading(false);
+        setIsLoading(true);
+        api.get('/challans', {
+            params: statusFilter ? { status: statusFilter } : {}
         })
-        .catch(err => {
-            console.error('Error fetching challans:', err);
-            setIsLoading(false);
-        });
-}, [statusFilter]);
+            .then(res => {
+                setChallans(res.data);
+                            setMessage({ type: 'success', text: 'Challans loaded successfully!' });
+
+                setIsLoading(false);
+            })
+            .catch(err => {
+                console.error('Error fetching challans:', err);
+                setIsLoading(false);
+            });
+    }, [statusFilter]);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this challan?')) return;
@@ -55,30 +57,30 @@ const statusFilter = query.get('status'); // "Draft", "Issued", etc.
 
     return (
 
-        <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-
-            {/* Sidebar */}
-            {/* <ChallanSidebar/> */}
-                {/* Sidebar */}
+        <div className="flex flex-col md:flex-row h-full  gap-10">
             <StatusSidebar
-                statuses={['Draft', 'Issued',  'Delivered', 'Cancelled']}
-  endpoint="/challans/status-counts"
-                 basePath="/challans"
-  addPath="/add-challan"
+                statuses={['Draft', 'Issued', 'Delivered', 'Cancelled']}
+                endpoint="/challans/status-counts"
+                basePath="/challans"
+                addPath="/add-challan"
 
                 getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
                 allowedRoles={['admin', 'manager']}
             />
 
             {/* Main Content */}
-            <div className="px-8 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
-                {
+            <div className="px-10 py-6 w-full  flex flex-col bg-white rounded-xl relative">
+
+                <div className="flex items-center justify-between gap-4 pb-5 min-h-10" >
+
+                    <h2 className="text-3xl font-bold mb-4">Challan List
+                    </h2>
                     <StatusMessageWrapper
                         loading={isLoading}
                         success={message.type === 'success' ? message.text : ''}
                         error={message.type === 'error' ? message.text : ''}
-                    />}
-                <h2 className="text-3xl font-bold mb-4">Challan List</h2>
+                    />
+                </div>
 
                 {challans.length === 0 ? (
                     <p className="text-gray-500">No challans found.</p>
@@ -88,7 +90,7 @@ const statusFilter = query.get('status'); // "Draft", "Issued", etc.
                             <tr>
                                 <th className="px-3 py-3 font-semibold text-left">Challans Ref No</th>
                                 <th className="px-3 py-3 font-semibold text-left">Dispatch Info</th>
-                      
+
                                 <th className="px-3 py-3 font-semibold text-left">Items</th>
                                 <th className="px-3 py-3 font-semibold text-left">Actions</th>
                             </tr>
@@ -97,16 +99,16 @@ const statusFilter = query.get('status'); // "Draft", "Issued", etc.
                             {challans.map((challan) => (
                                 <tr key={challan._id} className="border-b border-gray-100 hover:bg-gray-50">
                                     <td className="px-3 py-4"><p className='text-lg font-semibold'>{challan.challanNo}</p>
-                                      <span className='flex items-center gap-1'> <FiClock/> {formatDate(challan.createdAt) }</span>
+                                        <span className='flex items-center gap-1'> <FiClock /> {formatDate(challan.createdAt)}</span>
                                     </td>
                                     <td className="px-3 py-4">
-                                       <span className='flex items-center gap-1 text-md font-semibold'> <FiTruck/> {challan.vehicleId?.vehicleNumber} <FiUser className='ml-2'/> {challan.vehicleId?.driverName}</span>
-                                       <span className='flex items-center gap-1'> <FiCalendar/> {formatDate(challan.dispatchDate) }</span>
+                                        <span className='flex items-center gap-1 text-md font-semibold'> <FiTruck /> {challan.vehicleId?.vehicleNumber} <FiUser className='ml-2' /> {challan.vehicleId?.driverName}</span>
+                                        <span className='flex items-center gap-1'> <FiCalendar /> {formatDate(challan.dispatchDate)}</span>
                                     </td>
-                                   
+
                                     {/* ✅ Summary: Total Farmers, Quantity, Price */}
                                     <td className="px-3 py-4 space-y-1">
-                                        <span className='flex items-center gap-1 text-lg font-semibold pr-10'><FiUser/>{challan.summary?.totalFarmers || 0} <PiPottedPlant className='ml-5'/>{challan.summary?.totalQuantity || 0}</span>
+                                        <span className='flex items-center gap-1 text-lg font-semibold pr-10'><FiUser />{challan.summary?.totalFarmers || 0} <PiPottedPlant className='ml-5' />{challan.summary?.totalQuantity || 0}</span>
                                         <span className='flex items-center gap-1 text-lg font-semibold pr-10'><BsCurrencyRupee />{challan.summary?.totalPrice?.toLocaleString() || 0}</span>
                                     </td>
 

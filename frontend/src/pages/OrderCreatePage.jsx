@@ -12,6 +12,7 @@ import {
   validateRequired,
   validateDate,
 } from '../utils/validators';
+import StatusSidebar from '../components/layout/StatusSidebar';
 
 const OrderCreatePage = () => {
   const navigate = useNavigate();
@@ -141,10 +142,14 @@ const OrderCreatePage = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-      <OrderSidebar activeStatus="Add" />
-
-      <div className="px-18 py-10 w-full flex-1 flex flex-col bg-white rounded-4xl relative">
+      <div className="flex flex-col md:flex-row h-full  gap-10">
+ <StatusSidebar
+          statuses={["Draft", "Submitted", "Approved", "Delivered", "Cancelled"]}
+          endpoint="/orders/status-counts"
+          basePath="/orders"
+          addPath="/add-order"
+        />
+        <div className="px-10 py-6 w-full  flex flex-col bg-white rounded-xl relative">
         <div className="flex justify-between">
           <h2 className="text-3xl font-bold mb-4">Add Orders</h2>
           <StatusMessageWrapper

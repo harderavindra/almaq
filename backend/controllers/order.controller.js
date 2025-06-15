@@ -46,7 +46,7 @@ export const getDraftOrderById = async (req, res) => {
 
     // Fetch order details
     const order = await Order.findById(id)
-      .populate('departmentId', 'name district taluka contactNumber contactPerson address')
+      .populate('departmentId', 'name state district taluka contactNumber contactPerson address')
       .populate('createdBy', 'firstName lastName email')
       .populate('statusHistory.updatedBy', '-_id firstName lastName email profilePic');
 
@@ -337,7 +337,7 @@ export const deleteOrder = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Updating order status for ID:", id);
+    console.log("Updating order status for ID:", req.params);
     const { status } = req.body;
 
     // Validate the status input

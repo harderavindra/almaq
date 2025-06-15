@@ -12,6 +12,7 @@ import Pagination from '../components/Pagination';
 import ChallanSidebar from '../components/layout/ChallanSidebar';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import SelectDropdown from '../components/common/SelectDropdown';
+import StatusSidebar from '../components/layout/StatusSidebar';
 
 const ChallanEditPage = () => {
     const { user } = useAuth();
@@ -95,24 +96,34 @@ const ChallanEditPage = () => {
     if (!challan) return <p>Challan not found.</p>;
 
     return (
-        <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
-            <ChallanSidebar activeStatus={challan?.status} />
-            <div className="px-8 py-8 w-full flex-1 flex flex-col bg-white rounded-4xl shadow">
+        <div className="flex flex-col md:flex-row h-full  gap-10">
+            <StatusSidebar
+                statuses={['Draft', 'Issued', 'Delivered', 'Cancelled']}
+                endpoint="/challans/status-counts"
+                basePath="/challans"
+                addPath="/add-challan"
 
+                getStatusIcon={(status) => <OrderStatusIcon status={status} size={20} />}
+                allowedRoles={['admin', 'manager']}
+            />
+            <div className="px-10 py-6 w-full  flex flex-col bg-white rounded-xl relative">
+          <div className="flex items-center justify-between gap-4 pb-5 min-h-10" >
+
+                <h2 className="text-3xl font-bold mb-4">Challan :<span className=" text-2xl font-semibold"> {challan.challanNo}</span>
+                </h2>
                 <StatusMessageWrapper
                     loading={isLoading}
                     success={message.type === 'success' ? message.text : ''}
                     error={message.type === 'error' ? message.text : ''}
                 />
-                <h2 className="text-3xl font-bold mb-4">Challan :<span className=" text-2xl font-semibold"> {challan.challanNo}</span>
-                </h2>
+                </div>
                 <div className="bg-blue-100/50 rounded-2xl p-4  space-y-1">
                     <div className="flex gap-10  justify-between items-center p-2 ">
                         <div className='flex items-center gap-2'>
-                           <FiClipboard size={18} /> <p className="text-lg text-blue-700 font-medium">{challan.challanNo}</p>
+                            <FiClipboard size={18} /> <p className="text-lg text-blue-700 font-medium">{challan.challanNo}</p>
                         </div>
                         <div className='flex items-center gap-2'>
-                           <FiClock size={18}/> <p className="text-lg text-blue-700 font-medium">{new Date(challan.createdAt).toLocaleDateString()}</p>
+                            <FiClock size={18} /> <p className="text-lg text-blue-700 font-medium">{new Date(challan.createdAt).toLocaleDateString()}</p>
                         </div>
                         <div>
                             <p className="text-lg text-blue-700 font-medium border border-blue-500 px-3">{challan.status}</p>
@@ -182,12 +193,12 @@ const ChallanEditPage = () => {
                 {showSelector && (
                     <div className="w-screen h-screen p-5 fixed top-0 left-0 bg-black/50 z-50 flex justify-center items-center">
                         <div className=" h-full  bg-white rounded-2xl pr-5 pt-5 relative  ">
-                            <button type="button" onClick={() => setShowSelector(false)} className=" bg-blue-500  text-gray-50 hover:bg-blue-600 rounded-full p-3 absolute -top-2 -right-2  z-10 cursor-pointer">
-                                    <FiX size={24} />
-                                </button>
+                            <button type="button" onClick={() => { setShowSelector(false); fetchChallan() }} className=" bg-blue-500  text-gray-50 hover:bg-blue-600 rounded-full p-3 absolute -top-2 -right-2  z-10 cursor-pointer">
+                                <FiX size={24} />
+                            </button>
                             <div className="mb-2  h-full overflow-y-auto  w-6xl relative  p-5 mx-5">
-                                
-                                 <OrderItemSelector
+
+                                <OrderItemSelector
                                     chalanItems={challan.items}
                                     challanId={challan._id}
                                     onItemsSelected={(items) => {
