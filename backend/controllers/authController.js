@@ -152,10 +152,10 @@ export const refreshToken = async (req, res) => {
         data: {
           _id: user._id,
           firstName: user.firstName,
-          lastName:user.lastName,
+          lastName: user.lastName,
           email: user.email,
           role: user.role,
-          profilePic:user.profilePic
+          profilePic: user.profilePic
         },
       });
   } catch (err) {
