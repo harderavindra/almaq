@@ -137,13 +137,13 @@ export const refreshToken = async (req, res) => {
       .cookie('token', newAccessToken, {
         httpOnly: true,
         secure: true,
-        sameSite: 'none',
+        sameSite: 'None',
         maxAge: 15 * 60 * 1000,
       })
       .cookie('refreshToken', newRefreshToken, {
         httpOnly: true,
         secure: true,
-        sameSite: 'none',
+        sameSite: 'None',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .json({

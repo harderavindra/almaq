@@ -76,8 +76,9 @@ const login = async (credentials) => {
 
   const refreshUser = async () => {
     try {
-      const res = await axios.post('/auth/refresh');
-      console.log(res)
+       const res = await axios.post('/auth/refresh', {}, {
+      withCredentials: true, // 👈 Required to send refreshToken cookie
+    });
       setUser(res.data.data); // Or fetch user info if only token returned
     } catch {
       setUser(null);
