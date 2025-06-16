@@ -6,4 +6,4 @@ const router = express.Router();
 // Route to handle both upload and view signed URL generation
 router.get('/signed-url', getSignedUrlHandler);
 
-export default router;
+export default router; 

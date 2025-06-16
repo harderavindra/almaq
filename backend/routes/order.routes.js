@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/search',searchOrders);
 
 router.get('/status-counts',protect, getOrderStatusCounts);
-router.post('/', createOrder);
+router.post('/',protect, createOrder);
 router.get('/', protect, getOrders);
 router.get('/with-items', protect, getOrdersWithItems);
 router.put('/:id/status', protect, updateOrderStatus);
