@@ -8,6 +8,12 @@ const RevenueBarChart = () => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const currencyFormatter = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  });
+
   useEffect(() => {
     const fetchRevenueData = async () => {
       try {
@@ -51,16 +57,16 @@ const RevenueBarChart = () => {
   if (loading) return <p>Loading chart...</p>;
 
   return (
-    <div className="w-full h-96 p-4 bg-white rounded shadow">
+    <div className="w-full h-96 p-4 bg-white  shadow rounded-xl">
       <h2 className="text-xl font-semibold mb-4">Placed vs Delivered Revenue (Last 6 Months)</h2>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
+          <YAxis tickFormatter={(value) => currencyFormatter.format(value)} />
+          <Tooltip formatter={(value) => currencyFormatter.format(value)} />
           <Legend />
-          <Bar dataKey="placed" fill="#8884d8" name="Placed Revenue" />
+          <Bar dataKey="placed" fill="#405ae1" name="Placed Revenue" />
           <Bar dataKey="delivered" fill="#82ca9d" name="Delivered Revenue" />
         </BarChart>
       </ResponsiveContainer>
