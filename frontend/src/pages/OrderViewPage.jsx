@@ -9,7 +9,7 @@ import { OrderStatusIcon } from '../utils/constants';
 import { hasAccess } from '../utils/permissions';
 import Avatar from '../components/common/Avatar';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
-import StatusTimelineItem from '../components/common/statusTimelineItem';
+import StatusTimelineItem from '../components/common/StatusTimelineItem'; // ✅ correct
 
 const OrderViewPage = () => {
   const { user } = useAuth();

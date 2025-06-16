@@ -17,7 +17,7 @@ import StatusSidebar from '../components/layout/StatusSidebar';
 import { OrderStatusIcon } from '../utils/constants';
 import { formatShortDate } from '../utils/dateUtils';
 import Avatar from '../components/common/Avatar';
-import StatusTimelineItem from '../components/common/statusTimelineItem';
+import StatusTimelineItem from '../components/common/StatusTimelineItem';
 
 const OrderEditPage = () => {
   const { user } = useAuth();
