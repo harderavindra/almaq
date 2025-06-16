@@ -9,29 +9,25 @@ import OrdersThisMonthChart from '../components/dashboard/OrdersThisMonthChart';
 import RevenueLineChart from '../components/dashboard/RevenueLineChart';
 const DashboardPage = () => {
   const [stats, setStats] = useState({
-    challans: 0,
-    deliveries: 0,
-    revenue: 0,
-    topFarmers: [],
-    topDepartments: []
+    totalDepartments: 0,
+    totalPlantQuantity: 0,
+    totalRevenue: 0,
+    departmentsList: []
   });
 
   useEffect(() => {
-    // Fetch or calculate report data
-    // You can call APIs or compute from state/store
-    const fetchData = async () => {
-      // Example: Replace with real API/data logic
-      setStats({
-        challans: 42,
-        deliveries: 39,
-        revenue: 125000,
-        topFarmers: ['Ravi Patil', 'Sunita Deshmukh'],
-        topDepartments: ['Dept A', 'Dept B']
-      });
-    };
+  const fetchData = async () => {
+    try {
+      const res = await axios.get('/reports/stats'); // Adjust path if needed
+      setStats(res.data);
+      console.log(res.data)
+    } catch (err) {
+      console.error('Failed to load dashboard stats:', err);
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []);
 
   return (
      <div className="p-6 space-y-8">
@@ -42,35 +38,35 @@ const DashboardPage = () => {
         {/* <OrdersOverTimeChart /> */}
         {/* <OrdersThisMonthChart /> */}
         <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-gray-500">Total Challans This Month</p>
-          <h3 className="text-3xl font-semibold">{stats.challans}</h3>
+          <p className="text-gray-500">Total Departsment</p>
+          <h3 className="text-3xl font-semibold">{stats?.totalDepartments}</h3>
         </div>
         <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-gray-500">Orders Delivered</p>
-          <h3 className="text-3xl font-semibold">{stats.deliveries}</h3>
+          <p className="text-gray-500">Orders Plants</p>
+          <h3 className="text-3xl font-semibold"> {  stats.totalPlantQuantity}</h3>
         </div>
         <div className="bg-white rounded-xl shadow p-4 text-center">
           <p className="text-gray-500">Total Revenue</p>
-          <h3 className="text-3xl font-semibold">₹{stats.revenue.toLocaleString()}</h3>
+          <h3 className="text-3xl font-semibold">₹{stats.totalRevenue.toLocaleString('en-IN')}</h3>
         </div>
         <div className="bg-white rounded-xl shadow p-4 text-center">
           <p className="text-gray-500">Top Farmers</p>
           <ul className="mt-2 space-y-1">
-            {stats.topFarmers.map((name, idx) => (
-              <li key={idx} className="text-sm">{name}</li>
+            {stats.departmentsList.map((item, idx) => (
+              <li key={idx} className="text-sm">{item.name}</li>
             ))}
           </ul>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4 mt-8">
+      {/* <div className="bg-white rounded-xl shadow p-4 mt-8">
         <p className="text-gray-500 mb-2">Top Departments</p>
         <ul className="list-disc list-inside">
           {stats.topDepartments.map((dept, idx) => (
             <li key={idx}>{dept}</li>
           ))}
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 };

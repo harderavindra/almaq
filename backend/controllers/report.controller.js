@@ -1,4 +1,5 @@
 import Challan from "../models/Challan.js";
+import Department from "../models/Department.js";
 import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 
@@ -142,5 +143,58 @@ export const ordersDeliveredDuration = async (req, res) => {
     res.json(data.map(d => ({ date: d._id, revenue: d.revenue })));
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+
+export const getDashboardStats = async (req, res) => {
+   try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // Step 1: Get all relevant orders
+    const recentOrders = await Order.find({
+      orderDate: { $gte: sixMonthsAgo }
+    }).select('_id departmentId');
+
+    const orderIds = recentOrders.map(order => order._id);
+    const departmentIds = [...new Set(recentOrders.map(o => o.departmentId.toString()))];
+
+    // Step 2: Aggregate total plant quantity and revenue
+    const [summary, departments] = await Promise.all([
+      OrderItem.aggregate([
+        {
+          $match: {
+            orderId: { $in: orderIds }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalPlantQuantity: { $sum: '$quantity' },
+            totalRevenue: {
+              $sum: { $multiply: ['$quantity', '$pricePerUnit'] }
+            }
+          }
+        }
+      ]),
+
+      // Get department info
+      Department.find({ _id: { $in: departmentIds } })
+        .select('name district taluka')
+        .lean()
+    ]);
+
+    const result = {
+      totalPlantQuantity: summary[0]?.totalPlantQuantity || 0,
+      totalRevenue: summary[0]?.totalRevenue || 0,
+      totalDepartments: departments.length,
+      departmentsList: departments
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error('Dashboard summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch summary' });
   }
 };
