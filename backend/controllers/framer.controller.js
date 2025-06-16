@@ -32,32 +32,61 @@ export const getLatestFarmers = async (req, res) => {
   }
 };
 
-// Create a new farmer
 export const createFarmer = async (req, res) => {
   try {
     const {
-      firstName, lastName, gender, contactNumber,
-      idNumber, state, district, taluka, city, address
+      firstName, lastName, gender,
+      state, district, taluka, city,
+      contactNumber, idNumber, address,
     } = req.body;
-    
-    if (!firstName || !lastName || !contactNumber) {
-      console.log(req.body,'req.body2')
-      return res.status(400).json({ success: false, message: "Required fields missing" });
+
+    // Manual validation for required fields
+    if (!firstName || !lastName || !gender || !state || !district || !taluka) {
+      return res.status(400).json({
+        success: false,
+        message: "Please fill all required fields: firstName, lastName, gender, state, district, taluka.",
+      });
     }
 
     const farmer = await Farmer.create({
-      firstName, lastName, gender, contactNumber,
-      idNumber, state, district, taluka, city, address
+      firstName,
+      lastName,
+      gender,
+      state,
+      district,
+      taluka,
+      city,
+      contactNumber,
+      idNumber,
+      address,
     });
 
     res.status(201).json({ success: true, data: farmer });
+
   } catch (error) {
-   if (error.name === 'ValidationError') {
+    if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ message: 'Validation failed', errors: messages });
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: messages,
+      });
     }
 
-    res.status(500).json({ message: 'Server error', error: error.message });
+    if (error.code === 11000) {
+      // Duplicate key error (contactNumber or idNumber)
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        message: `The ${field} '${error.keyValue[field]}' already exists.`,
+      });
+    }
+
+    console.error(error); // Optional: log for debugging
+    return res.status(500).json({
+      success: false,
+      message: "An unexpected server error occurred. Please try again.",
+    });
   }
 };
 

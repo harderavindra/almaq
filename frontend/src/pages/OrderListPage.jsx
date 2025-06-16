@@ -59,6 +59,7 @@ const OrderListPage = () => {
     };
 
     useEffect(() => {
+        setCurrentPage(page); 
         fetchOrders(statusFilter, page);
     }, [statusFilter, page]);
 
@@ -158,7 +159,9 @@ const OrderListPage = () => {
                 </div>
                 <Pagination
                     currentPage={currentPage}
-                    onPageChange={setCurrentPage}
+                      onPageChange={(pageNum) => {
+    setSearchParams({ status: statusFilter, page: pageNum });
+  }}
                     totalPages={totalPages}
                 />
             </div>

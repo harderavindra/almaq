@@ -15,6 +15,9 @@ import Pagination from '../components/Pagination';
 import { validateRequired } from '../utils/validators';
 import StatusSidebar from '../components/layout/StatusSidebar';
 import { OrderStatusIcon } from '../utils/constants';
+import { formatShortDate } from '../utils/dateUtils';
+import Avatar from '../components/common/Avatar';
+import StatusTimelineItem from '../components/common/statusTimelineItem';
 
 const OrderEditPage = () => {
   const { user } = useAuth();
@@ -99,7 +102,7 @@ const OrderEditPage = () => {
       setSelectedState(res.data.order.departmentId.state);
       setSelectedDistrict(res.data.order.departmentId.district);
       setSelectedTaluka(res.data.order.departmentId.taluka);
-      console.log(res.data.order,"////////////",res.data.order.departmentId.state)
+      console.log(res.data.order, "////////////", res.data.order.departmentId.state)
       if (successMessage) {
         setMessage({ type: 'success', text: successMessage });
       }
@@ -178,9 +181,10 @@ const OrderEditPage = () => {
   };
 
   const updateItemToOrder = async () => {
+    
     // Step 1: Validate new farmer fields if adding a new farmer
     if (addNewFarmer) {
-      const farmerFields = ['gender', 'firstName', 'lastName', 'contactNumber', 'address', 'idNumber', 'state', 'district', 'taluka', 'city', 'state'];
+      const farmerFields = ['gender', 'firstName', 'lastName', 'state', 'district', 'taluka', 'city', 'state'];
       const farmerErrors = {};
 
       farmerFields.forEach((field) => {
@@ -189,15 +193,15 @@ const OrderEditPage = () => {
           farmerErrors[field] = error;
         }
       });
-
+      
       setFarmerErrors(farmerErrors);
-
+      
       if (Object.keys(farmerErrors).length > 0) {
         console.log("Farmer validation failed", farmerErrors);
         return;
       }
     }
-
+    
     // Step 2: Validate item fields
     const itemFields = ['plantTypeId', 'quantity', 'pricePerUnit'];
     if (!addNewFarmer) {
@@ -211,16 +215,18 @@ const OrderEditPage = () => {
         itemErrors[field] = error;
       }
     });
-
+    
     setItemErrors(itemErrors);
-
+    
     if (Object.keys(itemErrors).length > 0) {
       console.log("Item validation failed");
       return;
     }
-
-
+    
+    
     try {
+      console.log('newFarmer payload3:', newFarmer);
+
       const res = await api.post(`/orders/${orderId}/item`, {
         farmerId: addNewFarmer ? undefined : form.farmerId,
         newFarmer: addNewFarmer ? newFarmer : undefined,
@@ -304,12 +310,18 @@ const OrderEditPage = () => {
             <h2 className="text-3xl font-bold  ">Order :
               <span className="text-xl text-blue-700 font-medium"> {order?.departmentId?.name}</span>
             </h2>
+
             <StatusMessageWrapper
               loading={isLoading}
               success={message.type === 'success' ? message.text : ''}
               error={message.type === 'error' ? message.text : ''}
               className="sticky top-0 z-10"
             />
+          </div>
+          <div className="flex gap-4">
+            {order?.statusHistory?.map((status, index) => (
+              <StatusTimelineItem key={index} status={status} />
+            ))}
           </div>
           {!order ? (
             <div className="bg-blue-100/50 rounded-2xl p-8 animate-pulse">
@@ -485,7 +497,6 @@ const OrderEditPage = () => {
                       label="Contact Number"
                       value={newFarmer.contactNumber || ''}
                       handleOnChange={(e) => handleOnChangeFarmer('contactNumber', e.target.value)}
-                      hasError={farmerErrors.contactNumber}
                     />
                     <InputText label="Address Line" autoComplete={"Address line"}
                       type="text"
@@ -498,7 +509,6 @@ const OrderEditPage = () => {
                       label="Identification Number "
                       value={newFarmer.idNumber || ''}
                       handleOnChange={(e) => handleOnChangeFarmer('idNumber', e.target.value)}
-                      hasError={farmerErrors.idNumber}
                     />
                   </div>
                 </div>
@@ -535,7 +545,7 @@ const OrderEditPage = () => {
 
                 />
                 <IconButton disabled={addNewFarmer} onClick={() => setAddNewFarmer(true)
-                  
+
                 } icon={<FiPlus size={24} />} label='' className={'w-14'} />
               </div>
               <div className='w-full'>
@@ -578,14 +588,14 @@ const OrderEditPage = () => {
 
               </div>
               <span className='w-10'>
-              <IconButton
-                onClick={updateItemToOrder}
-                label=""
-                size="md"
-                shape="pill"
-                icon={<FiCheck size={18} />}
-                
-              />
+                <IconButton
+                  onClick={updateItemToOrder}
+                  label=""
+                  size="md"
+                  shape="pill"
+                  icon={<FiCheck size={18} />}
+
+                />
               </span>
             </div>
           </div>

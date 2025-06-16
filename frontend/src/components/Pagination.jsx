@@ -30,7 +30,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <div className="flex items-center justify-center p-6">
       <button
-        className="min-w-10 min-h-10 bg-gray-50 text-gray-600 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 px-2 py-2 rounded-md mx-1 disabled:opacity-40 cursor-pointer group"
+        className="min-w-10 min-h-10 bg-gray-50 text-gray-600 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 px-2 py-2 rounded-md mx-1 disabled:opacity-40 cursor-pointer group "
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
       >
@@ -46,7 +46,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`px-2 min-w-10 min-h-10 py-1 rounded-md mx-1 border   ${
+            className={`px-2 min-w-10 min-h-10 py-1 rounded-md mx-1 border cursor-pointer   ${
               currentPage === page
                 ? "bg-blue-50 border-blue-200 text-blue-600"
                 : "bg-gray-50 text-gray-600  border-gray-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-400 "

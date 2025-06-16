@@ -6,8 +6,6 @@ export const protect = async (req, res, next) => {
     let token;
     const authHeader = req.headers.authorization;
 
-      console.log('[Auth Middleware] Incoming Headers:', req.headers);
-  console.log('[Auth Middleware] Incoming Cookies:', req.cookies);
 
     if (authHeader?.startsWith('Bearer')) {
         token = authHeader.split(' ')[1];

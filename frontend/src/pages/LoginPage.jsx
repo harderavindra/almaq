@@ -16,6 +16,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
     if (isAuthenticated) {
@@ -51,7 +52,11 @@ const LoginPage = () => {
       return;
     }
 
+   setIsLoading(true); // Start loading
+
     const result = await login({ email, password });
+      setIsLoading(false); // Stop loading
+
 
     if (!result.success) {
       setError(result.message);
@@ -106,8 +111,9 @@ const LoginPage = () => {
             </button>
           </div>
 
-          <Button type="submit" variant="primary" className='mt-4' width="auto" disabled={!isOnline}>
-            {isOnline ? 'Login' : 'Offline'}
+          <Button type="submit" variant="primary" className='mt-4' width="auto"   disabled={!isOnline || isLoading}
+>
+  {isLoading ? 'Logging in...' : isOnline ? 'Login' : 'Offline'}
           </Button>
         </form>
       </div>

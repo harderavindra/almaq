@@ -170,7 +170,7 @@ export const getOrderWithItemsById = async (req, res) => {
 
     // Fetch order
     const order = await Order.findById(id)
-      .populate('departmentId', 'name contactNumber contactPerson address')
+      .populate('departmentId', 'name contactNumber contactPerson city taluka district')
       .populate('createdBy', 'firstName lastName email')
       .populate('statusHistory.updatedBy', '-_id firstName lastName email profilePic');
 
@@ -178,7 +178,7 @@ export const getOrderWithItemsById = async (req, res) => {
 
     // Fetch order items
     const orderItems = await OrderItem.find({ orderId: id })
-      .populate('farmerId', 'name contactNumber address')
+      .populate('farmerId', 'firstName lastName  address taluka')
       .populate('plantTypeId', 'name ratePerUnit')
       .populate({
         path: 'challanIds',
@@ -220,7 +220,24 @@ export const getOrderWithItemsById = async (req, res) => {
 
     const groupedData = Object.values(groupedByFarmer);
 
-    res.json({ order, items: groupedData });
+    // Summary from ALL orderItems (not paginated)
+    const allOrderItems = await OrderItem.find({ orderId: id });
+    const uniqueFarmerIds = new Set(allOrderItems.map(i => i.farmerId?.toString()));
+    const totalFarmers = uniqueFarmerIds.size;
+    let totalQuantity = 0;
+    let totalAmount = 0;
+
+    for (const item of allOrderItems) {
+      totalQuantity += item.quantity;
+      totalAmount += item.quantity * item.pricePerUnit;
+    }
+
+    res.json({ order, items: groupedData, 
+      summary: {
+        totalFarmers,
+        totalQuantity,
+        totalAmount
+      } });
 
   } catch (error) {
     console.error('Error:', error);
@@ -231,6 +248,7 @@ export const getOrderWithItemsById = async (req, res) => {
 export const getOrders = async (req, res) => {
   try {
     let { page = 1, limit = 10, status } = req.query;
+    console.log(page,"page")
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -244,9 +262,9 @@ export const getOrders = async (req, res) => {
     const totalOrders = await Order.countDocuments(filter);
 
     const orders = await Order.find(filter)
-      .skip(skip)
+      .skip(skip) 
       .limit(limit)
-      .sort({ orderDate: -1 }) // Show most recent orders first
+      .sort({ orderRefNo: -1 }) // Show most recent orders first
       .populate("departmentId", "name taluka district")
 
       ; // Adjust based on department model
@@ -403,6 +421,7 @@ export const getOrderStatusCounts = async (req, res) => {
 
 
 export const addItemToOrder = async (req, res) => {
+  console.log("Add items")
   try {
     const { orderId } = req.params;
     let { farmerId, plantTypeId, quantity, pricePerUnit, newFarmer } = req.body;
@@ -416,6 +435,7 @@ export const addItemToOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+console.log("Received newFarmer:", newFarmer);
 
     // Step 1: If newFarmer is present, create farmer
     if (!farmerId && newFarmer) {
@@ -459,6 +479,7 @@ export const addItemToOrder = async (req, res) => {
     });
 
   } catch (error) {
+    
     console.error('Error adding item:', error);
 
     // Check if it's a Mongoose validation error
@@ -472,9 +493,10 @@ export const addItemToOrder = async (req, res) => {
     }
 
     res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
+       success: false,
+  message: 'Server error',
+  error: error.message,
+  stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
     });
   }
 };
