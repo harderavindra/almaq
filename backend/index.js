@@ -22,9 +22,9 @@ import invoiceRoutes from "./routes/invoice.routes.js";
 dotenv.config();
 
 const app = express();
+
 app.use(express.json());
 app.use(cookieParser());
-
 
 app.use(cors({
     origin: ['http://localhost:5174','http://localhost:5173', 'https://almaq-frontend.vercel.app'],
@@ -32,6 +32,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     credentials: true,
 }));
+
+
 
 
 
