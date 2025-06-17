@@ -1,0 +1,42 @@
+
+
+/* Custom wave animations */
+@keyframes wave1Move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(0, -130px);
+  }
+}
+
+@keyframes wave2Move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-80px, -150px);
+  }
+}
+
+@keyframes wave3Move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(60px, -150px);
+  }
+}
+
+/* Attach to class names used in SVG paths */
+.animate-wave1 {
+  animation: wave1Move 2s ease-in-out infinite;
+}
+
+.animate-wave2 {
+  animation: wave2Move 2s ease-in-out infinite;
+}
+
+.animate-wave3 {
+  animation: wave3Move 2s ease-in-out infinite;
+}
