@@ -140,11 +140,11 @@ const OrderListPage = () => {
                                                             label=''
                                                             shape='pill'
                                                             onClick={() => navigate(`/orders/${o._id}/edit`)}
-                                                            icon={<FiPenTool size="18" />}
+                                                            icon={<FiFile size="18" />}
                                                         />
                                                     ) : null
                                                 }
-                                                <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} />
+                                                {/* <IconButton label='' shape='pill' onClick={() => navigate(`/orders/${o._id}`)} icon={<FiFile size="18" />} /> */}
 
                                                 <IconButton variant='danger' label='' shape='pill' onClick={() => handleDelete(o._id)} icon={<FiTrash size="18" />} />
                                             </div>

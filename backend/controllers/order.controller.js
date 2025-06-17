@@ -44,64 +44,38 @@ export const getDraftOrderById = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Fetch order details
     const order = await Order.findById(id)
       .populate('departmentId', 'name state district taluka contactNumber contactPerson address')
       .populate('createdBy', 'firstName lastName email')
       .populate('statusHistory.updatedBy', '-_id firstName lastName email profilePic');
 
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
+    if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // Count total items (for pagination)
-    const totalItems = await OrderItem.countDocuments({ orderId: id });
-
-    // Fetch paginated items
-    const orderItems = await OrderItem.find({ orderId: id })
-      .skip(skip)
-      .limit(limit)
+    const allOrderItems = await OrderItem.find({ orderId: id })
       .populate('farmerId', 'firstName lastName contactNumber district taluka')
       .populate('plantTypeId', 'name ratePerUnit')
       .populate({
         path: 'challanIds',
         select: 'challanNo quantity deliveryDate vehicleId notes',
-        populate: {
-          path: 'vehicleId',
-          select: 'vehicleNumber driverName'
-        }
+        populate: { path: 'vehicleId', select: 'vehicleNumber driverName' }
       });
 
-    // Group items by farmerId (without invoice)
-    const totalCount = await OrderItem.countDocuments({ orderId: id });
+    const orderItemIds = allOrderItems.map(item => item._id);
+    const challans = await Challan.find({ 'items.orderItemId': { $in: orderItemIds } }).select('items');
 
-    const orderItemIds = orderItems.map(item => item._id);
-
-    // Step 2: Fetch challans referencing these order items
-    const challans = await Challan.find({
-      'items.orderItemId': { $in: orderItemIds }
-    }).select('items');
-
-    // Step 3: Build challan quantity map per orderItemId
-    const challanDataMap = {}; // { orderItemId: [ { challanId: quantity }, ... ] }
-
+    const challanDataMap = {};
     for (const challan of challans) {
       for (const chItem of challan.items) {
         const itemId = chItem.orderItemId.toString();
         if (!challanDataMap[itemId]) challanDataMap[itemId] = [];
-
         challanDataMap[itemId].push({ [challan._id.toString()]: chItem.quantity });
       }
     }
 
-    // Step 4: Enrich order items with challan data
-    const enrichedItems = orderItems.map(item => {
+    const enrichedItems = allOrderItems.map(item => {
       const itemId = item._id.toString();
       const challanEntries = challanDataMap[itemId] || [];
-      const totalChallan = challanEntries.reduce(
-        (sum, entry) => sum + Object.values(entry)[0],
-        0
-      );
+      const totalChallan = challanEntries.reduce((sum, entry) => sum + Object.values(entry)[0], 0);
 
       return {
         ...item.toObject(),
@@ -110,59 +84,57 @@ export const getDraftOrderById = async (req, res) => {
       };
     });
 
-    // Step 5: Group by farmer
     const groupedByFarmer = {};
-
     for (const item of enrichedItems) {
       const farmerId = item.farmerId?._id?.toString() || 'Unknown';
-
       if (!groupedByFarmer[farmerId]) {
-        groupedByFarmer[farmerId] = {
-          farmer: item.farmerId,
-          items: []
-        };
+        groupedByFarmer[farmerId] = { farmer: item.farmerId, items: [] };
       }
-
       groupedByFarmer[farmerId].items.push(item);
     }
 
-    const groupedData = Object.values(groupedByFarmer);
+    let groupedData = Object.values(groupedByFarmer).map(group => {
+      const allDelivered = group.items.every(item => item.status === 'Delivered');
+      const invoiceItem = group.items.find(item => item.invoiceId);
+      return {
+        ...group,
+        allDelivered,
+        hasInvoice: Boolean(invoiceItem),
+        invoiceId: invoiceItem?.invoiceId || null
+      };
+    });
 
-    // Summary from ALL orderItems (not paginated)
-    const allOrderItems = await OrderItem.find({ orderId: id });
-    const uniqueFarmerIds = new Set(allOrderItems.map(i => i.farmerId?.toString()));
-    const totalFarmers = uniqueFarmerIds.size;
-    let totalQuantity = 0;
-    let totalAmount = 0;
+    groupedData.sort((a, b) => {
+      const nameA = a.farmer?.firstName?.toLowerCase() || '';
+      const nameB = b.farmer?.firstName?.toLowerCase() || '';
+      return nameA.localeCompare(nameB);
+    });
 
+    const paginatedItems = groupedData.slice(skip, skip + limit);
+
+    const totalFarmers = groupedData.length;
+    let totalQuantity = 0, totalAmount = 0;
     for (const item of allOrderItems) {
       totalQuantity += item.quantity;
       totalAmount += item.quantity * item.pricePerUnit;
     }
 
-    // Response
     res.json({
       order,
-      items: groupedData,
+      items: paginatedItems,
       pagination: {
-        totalItems,
-        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalFarmers,
+        totalPages: Math.ceil(totalFarmers / limit),
         currentPage: page,
         pageSize: limit
       },
-      summary: {
-        totalFarmers,
-        totalQuantity,
-        totalAmount
-      }
+      summary: { totalFarmers, totalQuantity, totalAmount }
     });
-
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 //order viwe page
 export const getOrderWithItemsById = async (req, res) => {
   try {

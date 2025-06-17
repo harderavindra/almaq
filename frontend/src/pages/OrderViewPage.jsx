@@ -32,7 +32,7 @@ const OrderViewPage = () => {
       // console.log('Order fetched:', res.data);
       setOrder(res.data.order);
       setSummary(res.data.summary);
-            console.log(res.data.summary, "res.data.summary")
+            console.log(res.data.items, "res.data.summary")
 
       setItems(res.data.items);
       setMessage({ type: 'success', text: 'Data loaded successfully' });

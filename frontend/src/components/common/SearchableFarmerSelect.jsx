@@ -76,10 +76,12 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
         
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search Farmer..."
-        className={`border border-gray-400 h-10 px-3 py-2 rounded-md w-full focus:border-blue-300 focus:outline-0 ${disabled? 'opacity-10':''} ${hasError ? 'ring-red-100 outline-red-300 ring-3 border-red-300':''}`}
+        className={`w-full px-4  py-3 bg-white border border-gray-300  rounded-lg focus:outline-blue-300   focus:ring-2 focus:ring-blue-100 ${disabled? 'opacity-50':''} ${hasError ? 'ring-red-100 outline-red-300 ring-3 border-red-300':''}`}
         onFocus={() => {setShowDropdown2(true); setSearchTerm('');}}
         disabled={disabled}
       />
+
+      
       {
         showDropdown2 && (
 
@@ -98,7 +100,7 @@ const SearchableFarmerSelect = ({ label = 'Farmer', onChange, onAddNewFarmer, di
                       setSearchTerm(farmer.firstName);
                       setShowDropdown2(false);
                     }}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-l-4 border-white hover:border-blue-500 flex items-center gap-2"
+                    className="px-4 py-2 cursor-pointer hover:bg-gray-100 border-l-4 border-white hover:border-blue-500 flex items-center gap-2 capitalize"
                   >
                    {i+1} <FiUser className='text-gray-600' /> {farmer.firstName} {farmer.lastName}, {farmer.district}
                   </li>

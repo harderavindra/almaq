@@ -14,7 +14,7 @@ const StatusTimelineItem = ({ status }) => {
       </span>
       <div className="flex items-center border border-blue-200 rounded-full pl-1 pr-3 py-1 gap-2">
         <Avatar src={status.updatedBy?.profilePic} alt={status.updatedBy?.firstName} size="xs" />
-        <p className="text-sm">{status.updatedBy?.firstName}</p>
+        <p className="text-sm capitalize">{status.updatedBy?.firstName}</p>
         <span className="text-xs text-gray-500">
           {formatShortDateTime(status.updatedAt)}
         </span>
