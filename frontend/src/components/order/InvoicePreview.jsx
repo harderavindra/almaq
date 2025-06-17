@@ -30,12 +30,12 @@ const InvoicePreview = ({ id }) => {
     useEffect(() => {
         document.title = `Invoice-${invoiceId}`;
     }, [invoiceId]);
+    
     const totalPlants = invoice?.items?.reduce(
         (total, item) => total + (item?.deliveredQuantity || 0),
         0
     );
-    const grossTotal = invoice?.vehicleFreight  + invoice?.totalAmount;
-    console.log(invoice?.vehicleFreight + invoice?.totalAmount)
+    const grossTotal = invoice?.vehicleFreight + invoice?.totalAmount;
 
     if (!invoice) return <div>Loading...</div>;
 
@@ -83,7 +83,7 @@ const InvoicePreview = ({ id }) => {
                             <p><label className='font-bold'>Bill To</label></p>
                         </td>
                         <td colSpan="3" className="text-left py-1 px-3">
-                            <p>{invoice.farmerId?.name}</p>
+                            <p>{invoice.farmerId?.firstName} {invoice.farmerId?.lastName}</p>
                         </td>
                     </tr>
                     <tr className="border border-black ">
@@ -91,7 +91,7 @@ const InvoicePreview = ({ id }) => {
                             <p><label className='font-bold'>Address</label></p>
                         </td>
                         <td colSpan="3" className="text-left py-1 px-3">
-                            <p>{invoice.farmerId?.address}</p>
+                            <p>{invoice.farmerId?.address} {invoice.farmerId?.city}</p>
                         </td>
                     </tr>
                     <tr className="border border-black ">
@@ -113,13 +113,13 @@ const InvoicePreview = ({ id }) => {
                             <p><label className='font-bold'>State</label></p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
-                            <p>Maharashtra</p>
+                            <p>{invoice.farmerId?.state}</p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
                             <p><label className='font-bold'>Contact No</label></p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3">
-                            <p>{invoice.farmerId.contactNumber}</p>
+                            <p>{invoice?.farmerId?.contactNumber}</p>
                         </td>
                     </tr>
                 </tbody>
@@ -223,7 +223,7 @@ const InvoicePreview = ({ id }) => {
                     </tr>
                 </tbody>
             </table>
-            
+
 
 
 
@@ -255,7 +255,7 @@ const InvoicePreview = ({ id }) => {
                     </tbody>
                 </table>
             }
-             {
+            {
                 invoice.paymentStatus === "Paid" &&
 
                 <table className="text-base w-full mt-6 border-collapse border border-gray-300 print:hidden">
@@ -264,7 +264,7 @@ const InvoicePreview = ({ id }) => {
                             <th className="border p-2 text-left">Payment Status</th>
                             <td className="border p-2 text-left"> <StatusBubble icon={'done'} status='success' /> {invoice?.paymentStatus}</td>
                             <th className="border p-2  text-left">Paid on</th>
-                            <td className="border p-2 text-left">{ formatDate( invoice?.paymentDate)}</td>
+                            <td className="border p-2 text-left">{formatDate(invoice?.paymentDate)}</td>
                         </tr>
                         <tr >
                             <th className="border p-2 text-left">Amount Recived</th>

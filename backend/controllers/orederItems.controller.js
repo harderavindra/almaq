@@ -194,7 +194,6 @@ export const updateOrderItemStatusAndQuantity = async (req, res) => {
 export const getOrderitemInvoice = async (req, res) => {
   const { orderId, farmerId } = req.query;
 
-  console.log("Fetching order items for orderId:", orderId, "and farmerId:", farmerId);
 
   try {
     // Fetch the Order (with department details)
@@ -228,15 +227,19 @@ export const getOrderitemInvoice = async (req, res) => {
       farmer: farmer
         ? {
           _id: farmer._id,
-          name: farmer.name,
+          firstName: farmer.firstName,
+          lastName: farmer.lastName,
           address: farmer.address,
+          taluka: farmer.taluka,
+          district: farmer.district,
+          state: farmer.state,
+          city: farmer.city,
           contactNumber: farmer.contactNumber,
         }
         : null,
       items,
     };
 
-    console.log("Fetched invoice data:", invoiceData);
     res.json(invoiceData);
   } catch (err) {
     console.error('Error fetching invoice data:', err);

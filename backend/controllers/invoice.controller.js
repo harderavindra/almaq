@@ -15,7 +15,7 @@ export const createInvoice = async (req, res) => {
         }
 
         // Get Order Items for the Farmer
-        const orderItems = await OrderItem.find({ orderId, farmerId });
+        const orderItems = await OrderItem.find({ orderId, farmerId }).populate('farmerId','firstName lastName address phoneNumber taluka district state ');
 
         if (!orderItems.length) {
             return res.status(400).json({ message: 'No items found for this order and farmer.' });

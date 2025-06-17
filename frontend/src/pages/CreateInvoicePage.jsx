@@ -6,6 +6,7 @@ import Button from '../components/common/Button';
 import SelectDropdown from '../components/common/SelectDropdown';
 import Logo from '../assets/almaq-logo.svg'; // Adjust the path as necessary
 import { formatDate } from '../utils/dateUtils';
+import numberToWords from '../utils/numberToWords';
 const agronomistName = [
     { name: 'Sanjeev Rathe', contact: '1234567890' },
     { name: 'Bhim Yevale', contact: '0987654321' },
@@ -66,6 +67,7 @@ const CreateInvoicePage = () => {
         0
     ) || 0;
     const totalPlants = orderData?.items?.reduce((sum, item) => sum + (item.deliveredQuantity || 0), 0) || 0;
+const grossTotal = Number(vehicleFreight || 0) + Number(totalAmount || 0);
 
 
     return (
@@ -93,10 +95,10 @@ const CreateInvoicePage = () => {
                         </tr>
                         <tr className="border border-black ">
                             <td colSpan="2" className="text-left py-1 px-3">
-                                <p><label className='font-bold'>Date:</label> {invoiceDate}</p>
+                                <p className=''><label className='font-bold '>Date:</label> <span className='font-bold text-md text-blue-500'>{invoiceDate}</span></p>
                             </td>
                             <td colSpan="2" className="text-left py-1 px-3">
-                                <p><label className='font-bold'>Invoice:</label> {invoiceNumber}</p>
+                                <p><label className='font-bold'>Invoice:</label><span className='font-bold text-md text-blue-500'>{invoiceNumber}</span></p>
                             </td>
 
                         </tr>
@@ -113,7 +115,7 @@ const CreateInvoicePage = () => {
                                 <p><label className='font-bold'>Bill To</label></p>
                             </td>
                             <td colSpan="3" className="text-left py-1 px-3">
-                                <p>{farmer?.name}</p>
+                                <p>{farmer?.firstName} {farmer?.lastName}</p>
                             </td>
                         </tr>
                         <tr className="border border-black ">
@@ -121,7 +123,7 @@ const CreateInvoicePage = () => {
                                 <p><label className='font-bold'>Address</label></p>
                             </td>
                             <td colSpan="3" className="text-left py-1 px-3">
-                                <p>{farmer?.address}</p>
+                                <p>{farmer?.address} {farmer?.city}</p>
                             </td>
                         </tr>
                         <tr className="border border-black ">
@@ -198,9 +200,26 @@ const CreateInvoicePage = () => {
                         <tr className="">
                             <td className="border p-2 w-1/4"><label className='font-bold'>Order No</label></td>
                             <td className="border p-2 w-1/4">{order.orderRefNo} </td>
-                            <td className="border p-2 w-1/4"><label className='font-bold'>Order Date</label></td>
-                            <td className="border p-2 w-1/4 text-right">{formatDate(order.orderDate)}</td>
+                            <td className="border p-2 w-1/4"></td>
+                            <td className="border p-2 w-1/4 text-right"></td>
                         </tr>
+                           <tr className="">
+                            <td className="border p-2 w-1/4"><label className='font-bold'>Order Date</label></td>
+                            <td className="border p-2 w-1/4 ">{formatDate(order.orderDate)}</td>
+                            <td className="border p-2 w-1/4"><label className='font-bold'>Gross Total	</label></td>
+                        <td className="border p-2 w-1/4 text-right font-bold text-sm font-bold text-md text-blue-500">₹{grossTotal}</td>
+                        </tr>
+                        <tr className="">
+                        <td className="border p-2 w-1/4"><label className='font-bold'>Gross Total in word</label></td>
+
+                        <td className="border p-2 w-1/4 font-bold text-sm" colSpan={3}>{numberToWords(grossTotal)}</td>
+                    </tr>
+
+                    <tr className="">
+                        <td className="border p-2 w-1/4"><label className='font-bold'>Agronomist </label></td>
+                        <td className="border p-2 w-1/4 font-bold text-md text-blue-500" colSpan={3}>{agronomist} </td>
+
+                    </tr>
                         <tr className="">
                             <td colSpan={4} className="border p-4 w-1/4">
                                 आज रोजी वरील प्रमाणे मिळालेली रोटे मी वैयक्तिक रित्या प्रत्यक्ष तपासून घेतली आहेत. सदर रूपे शेतात लागवडी योग्य असून हीरोपे पूर्ण निरोगी व जातिवंत आहेत. त्याबाबत माझी कोणतीही तक्रार नाही येथून पुढे रोपांची संपूर्ण जबाबदारी मी येत आहे
@@ -226,43 +245,7 @@ const CreateInvoicePage = () => {
                         </tr>
                     </tbody>
                 </table>
-                <div className="mb-4 space-y-1">
-                    <p><strong>Order Ref:</strong> {order?.orderRefNo}</p>
-                    <p><strong>Department:</strong> {order?.department?.name}</p>
-                    <p><strong>Department Contact:</strong> {order?.department?.contactPerson} ({order?.department?.contactNumber})</p>
-                    <p><strong>Farmer Name:</strong> {farmer?.name}</p>
-                    <p><strong>Farmer Contact:</strong> {farmer?.contactNumber}</p>
-                </div>
-
-                <table className="w-full border border-collapse border-gray-300 mb-4">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="border p-2">#</th>
-                            <th className="border p-2">Item</th>
-                            <th className="border p-2">Delivered Qty</th>
-                            <th className="border p-2">Price/Unit</th>
-                            <th className="border p-2">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items?.map((item, index) => (
-                            <tr key={item._id}>
-                                <td className="border p-2 text-center">{index + 1}</td>
-                                <td className="border p-2">{item.plantTypeId?.name || '-'}</td>
-                                <td className="border p-2 text-center">{item.deliveredQuantity}</td>
-                                <td className="border p-2 text-right">₹ {item.pricePerUnit?.toFixed(2) || '0.00'}</td>
-                                <td className="border p-2 text-right">
-                                    ₹ {(item.pricePerUnit || 0) * (item.deliveredQuantity || 0).toFixed(2)}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <div className="text-right font-bold text-lg">
-                    Total Amount: ₹ {totalAmount.toFixed(2)}
-                </div>
-
+                
 
             </div>
             <div className="w-sm bg-white p-6 shadow-lg rounded-2xl h-auto self-start sticky top-10">

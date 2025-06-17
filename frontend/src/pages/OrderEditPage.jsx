@@ -710,10 +710,10 @@ const OrderEditPage = () => {
                           <td rowSpan={subItems.length} className="px-4    py-3 text-right" valign="middle">
                             {hasInvoice && invoiceId ? (
                               <div className="flex gap-2 justify-center items-center" >
-                                <a href={`/view-invoice/${invoiceId}`} target="_blank" rel="noopener noreferrer">
+                                <a href={`/view-invoice/${invoiceId}`}  rel="noopener noreferrer">
                                   <IconButton label='' icon={<IoReceiptOutline size={18} />} size="sm" variant="primary" shape="pill" />
                                 </a>
-                                <a href={`/payment-invoice/${invoiceId}`} target="_blank" rel="noopener noreferrer" className="relative">
+                                <a href={`/payment-invoice/${invoiceId}`}  rel="noopener noreferrer" className="relative">
                                   <IconButton label='' icon={<MdOutlinePayments size={18} />} size="sm" variant="primary" shape="pill" />
                                   <FiPlus className="w-4 h-4 bg-green-600 text-white rounded-full absolute -right-1 bottom-0" />
                                 </a>
