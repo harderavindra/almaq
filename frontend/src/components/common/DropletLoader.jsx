@@ -1,9 +1,9 @@
 import React from 'react';
 import './droplet.css'; // Contains custom keyframes
 
-const DropletLoader = () => {
+const DropletLoader = ({className}) => {
   return (
-    <div className="w-[106px] h-[141px] scale-60">
+    <div className={`${className} origin-top-left`}>
       <svg
         width="106"
         height="141"

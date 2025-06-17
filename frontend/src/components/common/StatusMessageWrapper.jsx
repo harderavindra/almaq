@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import StatusMessage from "./StatusMessage";
 import { FiRefreshCcw } from "react-icons/fi";
+import DropletLoader from "./DropletLoader";
 
 const StatusMessageWrapper = ({ loading, success, error, editSections, className }) => {
   const [showSuccess, setShowSuccess] = useState(true);
@@ -20,7 +21,9 @@ const StatusMessageWrapper = ({ loading, success, error, editSections, className
       <div className={className}>
         <StatusMessage variant="progress">
           <div className="flex items-center">
-            <FiRefreshCcw className="animate-spin mr-2" /> Loading...
+            <DropletLoader className="scale-15 w-5 h-5"/>
+            {/* <FiRefreshCcw className="animate-spin mr-2" /> */}
+             Loading...
           </div>
         </StatusMessage>
       </div>
