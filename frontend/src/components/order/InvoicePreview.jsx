@@ -99,13 +99,13 @@ const InvoicePreview = ({ id }) => {
                             <p><label className='font-bold'>Taluka</label></p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
-                            <p>Latur</p>
+                            <p>{invoice.farmerId?.taluka}</p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
                             <p><label className='font-bold'>District</label></p>
                         </td>
                         <td colSpan="1" className="text-left py-1 px-3">
-                            <p>Latur</p>
+                            <p>{invoice.farmerId?.district}</p>
                         </td>
                     </tr>
                     <tr className="border border-black ">

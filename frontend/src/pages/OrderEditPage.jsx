@@ -21,6 +21,7 @@ import StatusTimelineItem from '../components/common/StatusTimelineItem';
 import { IoReceiptOutline } from 'react-icons/io5';
 import { MdOutlinePayments } from "react-icons/md";
 import StatusBubble from '../components/common/StatusBubble';
+import TableSkeletonRows from '../components/common/TableSkeletonRows';
 
 
 const OrderEditPage = () => {
@@ -636,7 +637,15 @@ const OrderEditPage = () => {
           )
 
           }
-          <table className="w-full border-collapse mt-10 rounded-lg overflow-hidden">
+          <div className='mt-10'>
+ {isLoading ? (
+                                <TableSkeletonRows
+                                    rowCount={5}
+                                    columnWidths={['6rem', '5rem', '8rem', '7rem', '6rem']}
+                                    hasActions={true}
+                                />
+                            ) : (
+                              <table className="w-full border-collapse  rounded-lg overflow-hidden">
             <thead className="bg-blue-50 text-blue-500 font-semibold border-b border-blue-200 rounded-xl">
               <tr>
                 <th className="px-4 py-2 text-left">Farmer</th>
@@ -737,6 +746,8 @@ const OrderEditPage = () => {
               })}
             </tbody>
           </table>
+                            )}
+                            </div>
 
           <Pagination
             currentPage={currentPage}

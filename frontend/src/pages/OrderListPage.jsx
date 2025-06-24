@@ -59,7 +59,7 @@ const OrderListPage = () => {
     };
 
     useEffect(() => {
-        setCurrentPage(page); 
+        setCurrentPage(page);
         fetchOrders(statusFilter, page);
     }, [statusFilter, page]);
 
@@ -135,7 +135,7 @@ const OrderListPage = () => {
                                         <td className="px-3 py-4">
                                             <div className='flex gap-3'>
                                                 {
-    (user.role === 'admin' || ['Draft', 'Submited'].includes(statusFilter)) ? (
+                                                    (user.role === 'admin' || ['Draft', 'Submited'].includes(statusFilter)) ? (
                                                         <IconButton
                                                             label=''
                                                             shape='pill'
@@ -159,9 +159,9 @@ const OrderListPage = () => {
                 </div>
                 <Pagination
                     currentPage={currentPage}
-                      onPageChange={(pageNum) => {
-    setSearchParams({ status: statusFilter, page: pageNum });
-  }}
+                    onPageChange={(pageNum) => {
+                        setSearchParams({ status: statusFilter, page: pageNum });
+                    }}
                     totalPages={totalPages}
                 />
             </div>
