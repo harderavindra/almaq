@@ -131,13 +131,13 @@ const grossTotal = Number(vehicleFreight || 0) + Number(totalAmount || 0);
                                 <p><label className='font-bold'>Taluka</label></p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
-                                <p>farmer?.taluka</p>
+                                <p>{farmer?.taluka}</p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
                                 <p><label className='font-bold'>District</label></p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3">
-                                <p>farmer?.district</p>
+                                <p>{farmer?.district}</p>
                             </td>
                         </tr>
                         <tr className="border border-black ">
@@ -145,13 +145,13 @@ const grossTotal = Number(vehicleFreight || 0) + Number(totalAmount || 0);
                                 <p><label className='font-bold'>State</label></p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
-                                <p>farmer?.state</p>
+                                <p>{farmer?.state}</p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
                                 <p><label className='font-bold'>Contact No</label></p>
                             </td>
                             <td colSpan="1" className="text-left py-1 px-3">
-                                <p>{farmer?.contactNumber}</p>
+                                <p>{farmer.contactNumber}</p>
                             </td>
                         </tr>
                     </tbody>
