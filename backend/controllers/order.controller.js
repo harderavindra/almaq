@@ -161,6 +161,8 @@ export const getOrderWithItemsById = async (req, res) => {
         }
       });
 
+      console.log('Order items fetched2:', orderItems);
+
     // Group items by farmerId
     const groupedByFarmer = {};
 

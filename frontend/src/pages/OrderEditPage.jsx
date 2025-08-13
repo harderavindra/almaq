@@ -51,7 +51,7 @@ const OrderEditPage = () => {
   const [errors, setErrors] = useState({});
   const [itemErrors, setItemErrors] = useState({});
   const [farmerErrors, setFarmerErrors] = useState({});
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 50;
   const orderStatuses = ['Draft', 'Submitted', 'Approved', 'Delivered', 'Cancelled'];
   const statusIconMap = {
     Pending: 'clock',

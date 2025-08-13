@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import Logo from '../../assets/almaq-logo.svg'; // Adjust the path as necessary
+import Sign from '../../assets/sign.jpg'; // Adjust the path as necessary
 import { formatDate } from '../../utils/dateUtils';
 import numberToWords from '../../utils/numberToWords';
 import Button from '../../components/common/Button'
@@ -122,6 +123,20 @@ const InvoicePreview = ({ id }) => {
                             <p>{invoice?.farmerId?.contactNumber}</p>
                         </td>
                     </tr>
+                    <tr className="border border-black ">
+                        <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
+                            <p><label className='font-bold'>State</label></p>
+                        </td>
+                        <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
+                            <p>{invoice.farmerId?.state}</p>
+                        </td>
+                        <td colSpan="1" className="text-left py-1 px-3 border-r border-black">
+                            <p><label className='font-bold'>Contact No</label></p>
+                        </td>
+                        <td colSpan="1" className="text-left py-1 px-3">
+                            <p>{invoice?.farmerId?.contactNumber}</p>
+                        </td>
+                    </tr>
                 </tbody>
 
 
@@ -214,7 +229,9 @@ const InvoicePreview = ({ id }) => {
                         </td>
                         <td colSpan={2} className=" p-4 w-1/2 text-right ">
                             <div className='w-80 ml-auto text-center'>
-                                <p className='h-20'></p>
+                                <p className='h-20'>
+                                    <img src={Sign} alt="sign " className="h-14 mb-4 mx-auto" />
+                                </p>
                                 <p className='font-bold'>Authorized Signatory</p>
                                 <p className='font-bold'>Almaq Biotech LLP</p>
                             </div>
