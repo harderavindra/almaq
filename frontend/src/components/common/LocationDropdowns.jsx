@@ -99,7 +99,7 @@ const LocationDropdowns = ({
     : [];
 
   return (
-    <div className={`${listClass} gap-3 ${className} w-full`}>
+    <div className={`${listClass} gap-3 ${className} w-full `}>
       <SelectDropdown
         label={hideLabel ? '' : 'State'}
         value={selectedState}
@@ -110,10 +110,10 @@ const LocationDropdowns = ({
         }}
         options={stateOptions}
         placeholder="Select State"
-        className="w-full"
+        className="w-full "
         hasError={errors.state}
       />
-
+  
       {selectedState && (
         <SelectDropdown
           label={hideLabel ? '' : 'District'}

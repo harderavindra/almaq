@@ -4,12 +4,15 @@ import api from '../api/axios';
 import OrderSidebar from '../components/layout/OrderSidebar';
 import Pagination from '../components/Pagination';
 import IconButton from '../components/common/IconButton';
-import { FiFile, FiPenTool, FiTrash } from 'react-icons/fi';
+import { FiFile, FiPenTool, FiTrash, FiUser } from 'react-icons/fi';
 import StatusMessageWrapper from '../components/common/StatusMessageWrapper';
 import StatusSidebar from '../components/layout/StatusSidebar';
 import { OrderStatusIcon } from '../utils/constants';
 import TableSkeletonRows from '../components/common/TableSkeletonRows';
 import { useAuth } from '../context/AuthContext';
+import { BsCurrencyRupee } from 'react-icons/bs';
+import { PiPottedPlant } from 'react-icons/pi';
+import LocationDropdowns from '../components/common/LocationDropdowns';
 
 const OrderListPage = () => {
     const navigate = useNavigate()
@@ -26,7 +29,14 @@ const OrderListPage = () => {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-    const limit = 5;
+    const limit = 20;
+
+    const [locationFilter, setLocationFilter] = useState({
+        state: '',
+        district: '',
+        taluka: ''
+    });
+
 
     useEffect(() => {
         if (successMessage) {
@@ -38,7 +48,9 @@ const OrderListPage = () => {
         setIsLoading(true);
         try {
             const res = await api.get('/orders', {
-                params: { status, page: pageNumber, limit },
+                params: { status, page: pageNumber, limit,  state: locationFilter.state,
+        district: locationFilter.district,
+        taluka: locationFilter.taluka },
             });
 
             const { orders = [], totalPages = 1 } = res.data || {};
@@ -61,7 +73,7 @@ const OrderListPage = () => {
     useEffect(() => {
         setCurrentPage(page);
         fetchOrders(statusFilter, page);
-    }, [statusFilter, page]);
+    }, [statusFilter, page, locationFilter]);
 
     const handleStatusChange = (newStatus) => {
         setSearchParams({ status: newStatus, page: 1 });
@@ -104,6 +116,23 @@ const OrderListPage = () => {
 
                 <div className="overflow-x-auto flex-1">
 
+                    <LocationDropdowns
+                        onChange={(locationData) => {
+                            setLocationFilter({
+                                state: locationData.state,
+                                district: locationData.district,
+                                taluka: locationData.taluka
+                            });
+                        }}
+                        defaultState=""
+                        defaultDistrict=""
+                        defaultTaluka=""
+                        showCityInput={false}
+                        hideLabel={false}
+                        listStyle="flex"
+                        className="flex-row gap-4 mb-4"
+                    />
+
                     <table className="w-full rounded-xl overflow-hidden" border="0">
                         <thead className="bg-blue-50 border-b border-blue-300 text-blue-400 font-light">
                             <tr>
@@ -111,7 +140,7 @@ const OrderListPage = () => {
                                 <th className="px-3 py-3 font-semibold text-left">Order Date</th>
                                 <th className="px-3 py-3 font-semibold text-left">Location</th>
                                 <th className="px-3 py-3 font-semibold text-left">Department</th>
-                                <th className="px-3 py-3 font-semibold text-left">Contact</th>
+                                <th className="px-3 py-3 font-semibold text-left">Info</th>
                                 <th className="px-3 py-3 font-semibold text-left">Action</th>
                             </tr>
                         </thead>
@@ -131,7 +160,12 @@ const OrderListPage = () => {
                                         </td>
                                         <td className="px-3 py-4">{o.departmentId?.taluka}, {o.departmentId?.district}</td>
                                         <td className="px-3 py-4">{o.departmentId?.name}</td>
-                                        <td className="px-3 py-4">{o.contactPerson}</td>
+                                        {/* <td className="px-3 py-4">{o.contactPerson}</td> */}
+                                        <td className="px-3 py-4 w-60">
+                                            <div className='flex items-center gap-3'>
+                                                <FiUser />{o.totalFarmers} <PiPottedPlant />{o.totalQuantity} <BsCurrencyRupee />{o.totalAmount}
+                                            </div>
+                                        </td>
                                         <td className="px-3 py-4">
                                             <div className='flex gap-3'>
                                                 {

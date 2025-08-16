@@ -221,8 +221,9 @@ export const getOrderWithItemsById = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    let { page = 1, limit = 10, status } = req.query;
-    console.log(page,"page")
+       let { page = 1, limit = 10, status, state, district, taluka } = req.query;
+
+
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -233,21 +234,86 @@ export const getOrders = async (req, res) => {
     }
 
 
+     // Step 1 — Find matching department IDs
+    const deptFilter = {};
+    if (state) deptFilter.state = state;
+    if (district) deptFilter.district = district;
+    if (taluka) deptFilter.taluka = taluka;
+
+    let deptIds = [];
+    if (Object.keys(deptFilter).length > 0) {
+      deptIds = await Department.find(deptFilter).distinct('_id');
+      if (deptIds.length === 0) {
+        return res.status(200).json({
+          orders: [],
+          currentPage: page,
+          totalPages: 0,
+          totalOrders: 0
+        });
+      }
+      filter.departmentId = { $in: deptIds };
+    }
+
+    // Step 2 — Get total count (filtered)
     const totalOrders = await Order.countDocuments(filter);
 
     const orders = await Order.find(filter)
       .skip(skip) 
       .limit(limit)
       .sort({ orderRefNo: -1 }) // Show most recent orders first
-      .populate("departmentId", "name taluka district")
+      .populate("departmentId", "name state taluka district")
+       .lean(); 
 
       ; // Adjust based on department model
 
+      
+
+     // Get order IDs from current page
+    const orderIds = orders.map(o => o._id);
+
+    // Get all items for these orders
+    const orderItems = await OrderItem.find({ orderId: { $in: orderIds } })
+      .select("orderId farmerId quantity pricePerUnit")
+      .lean();
+
+    // Group and calculate per order
+    const orderSummaryMap = {};
+    for (const item of orderItems) {
+      const orderId = item.orderId.toString();
+      if (!orderSummaryMap[orderId]) {
+        orderSummaryMap[orderId] = {
+          farmers: new Set(),
+          totalQuantity: 0,
+          totalAmount: 0
+        };
+      }
+      if (item.farmerId) {
+        orderSummaryMap[orderId].farmers.add(item.farmerId.toString());
+      }
+      orderSummaryMap[orderId].totalQuantity += item.quantity;
+      orderSummaryMap[orderId].totalAmount += item.quantity * item.pricePerUnit;
+    }
+
+    // Attach summary to each order row
+    const enrichedOrders = orders.map(order => {
+      const summary = orderSummaryMap[order._id.toString()] || {
+        farmers: new Set(),
+        totalQuantity: 0,
+        totalAmount: 0
+      };
+      return {
+        ...order,
+        totalFarmers: summary.farmers.size,
+        totalQuantity: summary.totalQuantity,
+        totalAmount: summary.totalAmount
+      };
+    });
+
     res.status(200).json({
-      orders,
+      orders: enrichedOrders,
       currentPage: page,
       totalPages: Math.ceil(totalOrders / limit),
-      totalOrders,
+      totalOrders
     });
   } catch (error) {
     console.error("Error fetching orders:", error);

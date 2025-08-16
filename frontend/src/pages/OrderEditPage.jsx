@@ -115,7 +115,6 @@ const OrderEditPage = () => {
       setSelectedState(res.data.order.departmentId.state);
       setSelectedDistrict(res.data.order.departmentId.district);
       setSelectedTaluka(res.data.order.departmentId.taluka);
-      console.log(res.data.order, "////////////", res.data)
       if (successMessage) {
         setMessage({ type: 'success', text: successMessage });
       }
