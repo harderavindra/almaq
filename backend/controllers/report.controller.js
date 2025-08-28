@@ -103,48 +103,60 @@ export const ordersPlacedDuration = async (req, res) => {
     ]);
 
     res.json(data.map(d => ({ date: d._id, revenue: d.revenue })));
+    console.log("Orders placed data:", data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 export const ordersDeliveredDuration = async (req, res) => {
-  try {
+    try {
     const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6); 
 
-    const data = await Challan.aggregate([
-      { $match: { createdAt: { $gte: sixMonthsAgo } } },
-      { $unwind: "$items" },
+    const data = await OrderItem.aggregate([
+      // Join with Order to get orderDate
       {
         $lookup: {
-          from: "orderitems",
-          localField: "items.orderItemId",
+          from: "orders",
+          localField: "orderId",
           foreignField: "_id",
-          as: "orderItem"
+          as: "order"
         }
       },
-      { $unwind: "$orderItem" },
+      { $unwind: "$order" },
+
+      // Filter for orderDate in last 6 months
+      {
+        $match: {
+           status: "Delivered",
+          "order.orderDate": { $gte: sixMonthsAgo }
+        }
+      },
+
+      // Group by orderDate (formatted)
       {
         $group: {
           _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+            $dateToString: { format: "%Y-%m-%d", date: "$order.orderDate" }
           },
           revenue: {
-            $sum: {
-              $multiply: ["$items.quantity", "$orderItem.pricePerUnit"]
-            }
+            $sum: { $multiply: ["$quantity", "$pricePerUnit"] }
           }
         }
       },
+
+      // Sort by date
       { $sort: { _id: 1 } }
     ]);
 
     res.json(data.map(d => ({ date: d._id, revenue: d.revenue })));
+    console.log("Orders Deliverd data:", data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 export const getDashboardStats = async (req, res) => {
