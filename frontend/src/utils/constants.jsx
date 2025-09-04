@@ -64,7 +64,7 @@ export const locationData = {
         "Bhandara": ["Bhandara", "Lakhandur", "Lakhani", "Mohadi", "Pauni", "Sakoli", "Tumsar"],
         "Chandrapur": ["Ballarpur", "Bhadravati", "Brahmapuri", "Chandrapur", "Chimur", "Gondpipri", "Mul", "Nagbhid", "Pombhurna", "Rajura", "Saoli", "Sindewahi", "Warora"],
         "Gadchiroli": ["Aheri", "Armori", "Bhamragad", "Chamorshi", "Dhanora", "Etapalli", "Gadchiroli", "Korchi", "Kurkheda", "Mulchera", "Sironcha"],
-        "Palghar": ["Vikramgad","Jawhar", "Dahanu", "Palghar", "Vasai", "Mokhada", "Talasari","Wada"]
+        "Palghar": ["Vikramgad","Jawhar", "Dahanu", "Palghar", "Vasai", "Mokhada", "Talasari","Wada","kolgaon"]
     },
     Gujarat:{
       "Amreli":["Amreli"]
