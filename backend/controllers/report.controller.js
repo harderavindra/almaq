@@ -160,7 +160,7 @@ export const ordersDeliveredDuration = async (req, res) => {
 
 
 export const getDashboardStats = async (req, res) => {
-   try {
+  try {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -172,26 +172,39 @@ export const getDashboardStats = async (req, res) => {
     const orderIds = recentOrders.map(order => order._id);
     const departmentIds = [...new Set(recentOrders.map(o => o.departmentId.toString()))];
 
-    // Step 2: Aggregate total plant quantity and revenue
-    const [summary, departments] = await Promise.all([
+    // Step 2: Aggregate for Placed & Delivered
+    const [summary, deliveredSummary, departments] = await Promise.all([
+      // All placed items
+      OrderItem.aggregate([
+        { $match: { orderId: { $in: orderIds } } },
+        {
+          $group: {
+            _id: null,
+            totalPlantQuantity: { $sum: '$quantity' },
+            totalRevenue: { $sum: { $multiply: ['$quantity', '$pricePerUnit'] } }
+          }
+        }
+      ]),
+
+      // Only delivered items
       OrderItem.aggregate([
         {
           $match: {
-            orderId: { $in: orderIds }
+            orderId: { $in: orderIds },
+            status: "Delivered",
+            invoiceId: { $exists: true, $ne: null }
           }
         },
         {
           $group: {
             _id: null,
-            totalPlantQuantity: { $sum: '$quantity' },
-            totalRevenue: {
-              $sum: { $multiply: ['$quantity', '$pricePerUnit'] }
-            }
+            deliveredPlantQuantity: { $sum: '$quantity' },
+            deliveredRevenue: { $sum: { $multiply: ['$quantity', '$pricePerUnit'] } }
           }
         }
       ]),
 
-      // Get department info
+      // Department info
       Department.find({ _id: { $in: departmentIds } })
         .select('name district taluka')
         .lean()
@@ -200,6 +213,8 @@ export const getDashboardStats = async (req, res) => {
     const result = {
       totalPlantQuantity: summary[0]?.totalPlantQuantity || 0,
       totalRevenue: summary[0]?.totalRevenue || 0,
+      deliveredPlantQuantity: deliveredSummary[0]?.deliveredPlantQuantity || 0,
+      deliveredRevenue: deliveredSummary[0]?.deliveredRevenue || 0,
       totalDepartments: departments.length,
       departmentsList: departments
     };
