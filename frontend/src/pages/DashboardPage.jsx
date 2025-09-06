@@ -38,28 +38,71 @@ const DashboardPage = () => {
       <div className='flex gap-20 mb-10 justify-between items-stretch '>
         <RevenueLineChart />
 
-        <div className="flex flex-col gap-6 w-lg h-full h-fit items-stretch justify-between">
+        <div className="flex flex-col gap-6 w-lg h-full h-fit min-w-[420px] items-stretch justify-between">
           {/* <OrdersOverTimeChart /> */}
           {/* <OrdersThisMonthChart /> */}
           <div className="bg-white rounded-xl shadow p-4  flex  gap-6 items-center  ">
-            <FiMapPin size={48} />
+             <div className="p-3 bg-orange-100 rounded-xl">
+                          <FiMapPin size={40} className="text-orange-600"  />
+
+            </div>
             <div className='flex flex-col gap-1'>
               <p className="text-gray-500 text-lg">Total Departsment</p>
               <h3 className=" font-semibold text-3xl">{stats?.totalDepartments}</h3>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4  flex  gap-6 items-center ">
-            <PiPottedPlant size={48} />
-            <div className='flex flex-col gap-1'>
-              <p className="text-gray-500 text-lg">Plants</p>
-              <h3 className=" font-semibold text-3xl">{stats?.totalPlantQuantity} | {stats.deliveredPlantQuantity}</h3>
+          <div className="bg-white rounded-2xl shadow-md p-5 flex gap-6 items-center hover:shadow-lg transition">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <PiPottedPlant size={40} className="text-green-600" />
+            </div>
+
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="text-gray-500 text-sm">Total Plants</p>
+
+              <h3 className="font-semibold text-2xl">
+                {(stats?.deliveredPlantQuantity ?? 0).toLocaleString('en-IN')}
+                <span className="text-gray-400 text-2xl"> / {stats?.totalPlantQuantity.toLocaleString('en-IN')}</span>
+              </h3>
+
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-green-500 h-2 rounded-full"
+                  style={{ width: `${(stats?.deliveredPlantQuantity / stats?.totalPlantQuantity) * 100}%` }}
+                />
+              </div>
+
+              <p className="text-gray-400 text-xs">
+                {Math.round((stats?.deliveredPlantQuantity / stats?.totalPlantQuantity) * 100)}% delivered
+              </p>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4  flex  gap-6 items-center h-full ">
-            <LuIndianRupee size={48} />
-            <div className='flex flex-col gap-1'>
-              <p className="text-gray-500 text-lg">Total Revenue</p>
-              <h3 className=" font-semibold text-3xl">{stats?.totalRevenue.toLocaleString('en-IN')}</h3>
+          <div className="bg-white rounded-2xl shadow-md p-5 flex gap-6 items-center h-full hover:shadow-lg transition">
+            {/* Icon */}
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <LuIndianRupee size={40} className="text-blue-600" />
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="text-gray-500 text-sm">Total Revenue</p>
+
+              <h3 className="font-semibold text-2xl">
+                ₹{(stats?.deliveredRevenue ?? 0).toLocaleString('en-IN')}
+                <span className="text-gray-400 "> / ₹{stats?.totalRevenue.toLocaleString('en-IN')}</span>
+              </h3>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
+                  style={{ width: `${(stats?.deliveredRevenue / stats?.totalRevenue) * 100}%` }}
+                />
+              </div>
+
+              {/* Percentage Label */}
+              <p className="text-gray-400 text-xs">
+                {Math.round((stats?.deliveredRevenue / stats?.totalRevenue) * 100)}% achieved
+              </p>
             </div>
           </div>
 
