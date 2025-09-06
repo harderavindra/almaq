@@ -51,8 +51,8 @@ const DashboardPage = () => {
           <div className="bg-white rounded-xl shadow p-4  flex  gap-6 items-center ">
             <PiPottedPlant size={48} />
             <div className='flex flex-col gap-1'>
-              <p className="text-gray-500 text-lg">Total Plants</p>
-              <h3 className=" font-semibold text-3xl">{stats?.totalPlantQuantity}</h3>
+              <p className="text-gray-500 text-lg">Plants</p>
+              <h3 className=" font-semibold text-3xl">{stats?.totalPlantQuantity} | {stats.deliveredPlantQuantity}</h3>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow p-4  flex  gap-6 items-center h-full ">
