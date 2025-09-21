@@ -137,7 +137,7 @@ export const InvoicesList = async (req, res) => {
     }
 
     let invoices = await Invoice.find(filter)
-      .populate('farmerId', 'name department')
+      .populate('farmerId', 'firstName lastName department')
       .sort({ createdAt: -1 });
 
     // Add totalPlants per invoice

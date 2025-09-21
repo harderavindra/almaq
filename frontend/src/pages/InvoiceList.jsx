@@ -9,6 +9,10 @@ import { useNavigate } from 'react-router-dom';
 import IconButton from '../components/common/IconButton';
 
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { FiDownload } from "react-icons/fi";
+
 const months = [...Array(12)].map((_, i) => ({
     value: i + 1,
     label: new Date(0, i).toLocaleString('default', { month: 'long' }),
@@ -110,6 +114,44 @@ const isNextDisabled = !maxDate ||
         }
     };
 
+
+    const exportToExcel = () => {
+  // Convert your grouped invoices into flat rows
+  const rows = data.flatMap(group =>
+    group.invoices.map(invoice => ({
+      "Invoice Number": invoice.invoiceNumber,
+      "Invoice Date": new Date(invoice.invoiceDate).toLocaleDateString(),
+      "Payment Date": invoice.paymentDate
+        ? new Date(invoice.paymentDate).toLocaleDateString()
+        : "-",
+      "Farmer / Department": invoice?.farmerId?.firstName
+        ? `${invoice.farmerId.firstName} ${invoice.farmerId.lastName ?? ""}`.trim()
+        : invoice?.orderId?.departmentId?.name || "-",
+      "Agronomist": invoice.agronomist || "-",
+      "Total Amount (₹)": invoice.totalAmount,
+      "Total Plants": invoice.totalPlants || 0,
+      "Payment Status": invoice.paymentStatus,
+      "Payment Mode": invoice.paymentMode || "-"
+    }))
+  );
+
+  // Convert JSON to worksheet
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+
+  // Create a new workbook and append the sheet
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+
+  // Export to Excel file
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const fileName = `Invoices_${filters.month}_${filters.year}.xlsx`;
+  saveAs(new Blob([excelBuffer], { type: "application/octet-stream" }), fileName);
+};
+
     return (
         <div className="flex flex-col md:flex-row h-full px-10 gap-10 py-10">
 
@@ -118,6 +160,12 @@ const isNextDisabled = !maxDate ||
                     <h1 className="text-3xl font-bold mb-4">Invoices by Department</h1>
 
                     <div className="flex items-center gap-2 mb-4">
+                        <button
+  onClick={exportToExcel}
+  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+>
+  <FiDownload /> Export to Excel
+</button>
                         <select
                             value={filters.status || ''}
                             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -205,7 +253,7 @@ const isNextDisabled = !maxDate ||
                                             <td className="p-2 text-blue-600 underline cursor-pointer" onClick={() => console.log('Open Invoice', invoice._id)}>{invoice.invoiceNumber}</td>
                                             <td className="p-3">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
                                             <td className="p-2">{invoice.paymentDate ? new Date(invoice.paymentDate).toLocaleDateString() : '-'}</td>
-                                            <td className="p-2">{invoice.farmerId?.firstName || group.department}</td>
+                                            <td className="p-2"> {`${invoice?.farmerId?.firstName ?? ""} ${invoice?.farmerId?.lastName ?? ""}`.trim() || "-"}</td>
                                             <td className="p-2">{invoice.agronomist || '-'}</td>
                                             <td className="p-2 font-semibold"><FaRupeeSign className="inline" /> {invoice.totalAmount}</td>
                                             <td className="p-2">{invoice.totalPlants}</td>
