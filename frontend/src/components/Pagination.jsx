@@ -8,22 +8,29 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;
 
   const generatePageNumbers = () => {
-    const pages = [];
+  const pages = [];
+  const delta = 5; // how many pages around current to show
+  let left = Math.max(2, currentPage - delta);
+  let right = Math.min(totalPages - 1, currentPage + delta);
 
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, "...", totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
-      }
-    }
+  // push first page
+  pages.push(1);
 
-    return pages;
-  };
+  // dots before
+  if (left > 2) pages.push("...");
+
+  for (let i = left; i <= right; i++) {
+    pages.push(i);
+  }
+
+  // dots after
+  if (right < totalPages - 1) pages.push("...");
+
+  // last page
+  if (totalPages > 1) pages.push(totalPages);
+
+  return pages;
+};
 
   const pageNumbers = generatePageNumbers();
 
@@ -39,12 +46,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 
       {pageNumbers.map((page, idx) =>
         page === "..." ? (
-          <span key={idx} className="mx-1 text-gray-500 px-2 py-1">
+    <span key={`dots-${idx}`} className="mx-1 text-gray-500 px-2 py-1">
             ...
           </span>
         ) : (
           <button
-            key={page}
+      key={`page-${page}-${idx}`} // <-- FIXED unique key
             onClick={() => onPageChange(page)}
             className={`px-2 min-w-10 min-h-10 py-1 rounded-md mx-1 border cursor-pointer   ${
               currentPage === page

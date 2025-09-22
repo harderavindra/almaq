@@ -126,7 +126,7 @@ export const getInvoiceById = async (req, res) => {
 
 export const InvoicesList = async (req, res) => {
   try {
-    const { month, year, status, department } = req.query;
+    const { month, year, status, department,  page = 1, limit = 10  } = req.query;
 
     const filter = {};
     if (status) filter.paymentStatus = status;
@@ -135,21 +135,61 @@ export const InvoicesList = async (req, res) => {
       const end = new Date(year, month, 0, 23, 59, 59, 999);
       filter.invoiceDate = { $gte: start, $lte: end };
     }
+    if (department) filter['farmerId.department'] = department;
+
+    const totalInvoices = await Invoice.countDocuments(filter);
 
     let invoices = await Invoice.find(filter)
-      .populate('farmerId', 'firstName lastName department')
-      .sort({ createdAt: -1 });
+  .populate('farmerId', 'firstName lastName address city taluka district state')
+  .populate({
+    path: 'orderId',
+    populate: {
+      path: 'departmentId',
+      select: 'name', // assuming Department model has `name`
+    },
+    select: 'departmentId agronomist',
+  })
+  .sort({ createdAt: -1 })
+   .skip((page - 1) * limit)
+      .limit(Number(limit));
 
-    // Add totalPlants per invoice
     invoices = invoices.map((inv) => {
-      const totalPlants = inv.items.reduce((sum, item) => sum + (item.deliveredQuantity || 0), 0);
-      return { ...inv._doc, totalPlants };
+      const totalPlants = inv.items?.reduce(
+        (sum, item) => sum + (item.deliveredQuantity || 0),
+        0
+      );
+
+      const farmer = inv.farmerId;
+      const farmerName = farmer
+        ? `${farmer.firstName ?? ''} ${farmer.lastName ?? ''}`.trim()
+        : null;
+
+      const farmerAddress = farmer
+        ? [farmer.address, farmer.city, farmer.taluka, farmer.district, farmer.state]
+            .filter(Boolean)
+            .join(', ')
+        : null;
+
+      return {
+        ...inv._doc,
+        farmerName,
+        farmerAddress,
+  department: inv?.orderId?.departmentId?.name || 'Unknown',
+        agronomist: inv?.orderId?.agronomist || null,
+        totalPlants,
+        totalAmount: inv.totalAmount || 0, // assuming totalAmount is stored in invoice
+        invoiceNumber: inv.invoiceNumber || inv._id,
+        invoiceDate: inv.invoiceDate,
+        paymentDate: inv.paymentDate || null,
+        paymentStatus: inv.paymentStatus || 'Pending',
+        paymentMode: inv.paymentMode || null,
+      };
     });
 
     // Group by department
     const grouped = {};
     for (const invoice of invoices) {
-      const dep = invoice.farmerId?.department || 'Unknown';
+      const dep = invoice.department || 'Unknown';
       if (!grouped[dep]) grouped[dep] = [];
       grouped[dep].push(invoice);
     }
@@ -164,9 +204,7 @@ export const InvoicesList = async (req, res) => {
           }
         }
       },
-      {
-        $sort: { "_id.year": -1, "_id.month": -1 }
-      }
+      { $sort: { "_id.year": -1, "_id.month": -1 } }
     ]);
 
     const availableMonthYear = availableDates.map((d) => ({
@@ -179,12 +217,18 @@ export const InvoicesList = async (req, res) => {
       invoices: grouped[dep],
     }));
 
-    res.json({ invoices: result, availableMonthYear });
+    res.json({ invoices: result, availableMonthYear,pagination: {
+        total: totalInvoices,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalInvoices / limit),
+      }, });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
 
 // DELETE Invoice Controller
 export const deleteInvoice = async (req, res) => {

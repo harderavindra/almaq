@@ -12,6 +12,7 @@ import IconButton from '../components/common/IconButton';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { FiDownload } from "react-icons/fi";
+import Pagination from '../components/Pagination';
 
 const months = [...Array(12)].map((_, i) => ({
     value: i + 1,
@@ -23,6 +24,9 @@ const InvoiceList = () => {
     const [data, setData] = useState([]);
     const [availableDates, setAvailableDates] = useState([]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
@@ -30,26 +34,26 @@ const InvoiceList = () => {
     });
 
     const minDate = availableDates.reduce((min, d) => {
-    if (!min || d.year < min.year || (d.year === min.year && d.month < min.month)) {
-        return d;
-    }
-    return min;
-}, null);
+        if (!min || d.year < min.year || (d.year === min.year && d.month < min.month)) {
+            return d;
+        }
+        return min;
+    }, null);
 
-const maxDate = availableDates.reduce((max, d) => {
-    if (!max || d.year > max.year || (d.year === max.year && d.month > max.month)) {
-        return d;
-    }
-    return max;
-}, null);
+    const maxDate = availableDates.reduce((max, d) => {
+        if (!max || d.year > max.year || (d.year === max.year && d.month > max.month)) {
+            return d;
+        }
+        return max;
+    }, null);
 
-const isPrevDisabled = !minDate ||
-    filters.year < minDate.year ||
-    (filters.year === minDate.year && filters.month <= minDate.month);
+    const isPrevDisabled = !minDate ||
+        filters.year < minDate.year ||
+        (filters.year === minDate.year && filters.month <= minDate.month);
 
-const isNextDisabled = !maxDate ||
-    filters.year > maxDate.year ||
-    (filters.year === maxDate.year && filters.month >= maxDate.month);
+    const isNextDisabled = !maxDate ||
+        filters.year > maxDate.year ||
+        (filters.year === maxDate.year && filters.month >= maxDate.month);
 
     const statusColors = {
         Paid: 'success',
@@ -68,7 +72,7 @@ const isNextDisabled = !maxDate ||
         'Pending': 'clock',
         'Paid': 'done',
         'Partially Paid': 'check',
-        Cheque: <FaMoneyBillWave />, 
+        Cheque: <FaMoneyBillWave />,
     };
 
     const fetchInvoices = async () => {
@@ -78,11 +82,15 @@ const isNextDisabled = !maxDate ||
                     month: filters.month,
                     year: filters.year,
                     status: filters.status,
+                    page: currentPage,
+                    limit: 50, // adjust per page size
                 },
             });
             setData(res.data.invoices);
             setAvailableDates(res.data.availableMonthYear);
-           
+            setTotalPages(res.data?.pagination.totalPages);
+
+
         } catch (err) {
             console.error('Error fetching invoices:', err);
         }
@@ -91,7 +99,7 @@ const isNextDisabled = !maxDate ||
 
     useEffect(() => {
         fetchInvoices();
-    }, [filters]);
+    }, [filters, currentPage]);
 
     const handleMonthChange = (direction) => {
         let current = parseInt(filters.month) || new Date().getMonth() + 1;
@@ -114,42 +122,58 @@ const isNextDisabled = !maxDate ||
         }
     };
 
+    console.log(data)
+    const exportToExcel = async () => {
+  try {
+    // Fetch all invoices with current filters, ignoring pagination
+    const res = await api.get('/invoices/all', {
+      params: {
+        month: filters.month,
+        year: filters.year,
+        status: filters.status,
+        page: 1,
+        limit: 10000, // large number to get all records, adjust if needed
+      },
+    });
 
-    const exportToExcel = () => {
-  // Convert your grouped invoices into flat rows
-  const rows = data.flatMap(group =>
-    group.invoices.map(invoice => ({
-      "Invoice Number": invoice.invoiceNumber,
-      "Invoice Date": new Date(invoice.invoiceDate).toLocaleDateString(),
-      "Payment Date": invoice.paymentDate
-        ? new Date(invoice.paymentDate).toLocaleDateString()
-        : "-",
-      "Farmer / Department": invoice?.farmerId?.firstName
-        ? `${invoice.farmerId.firstName} ${invoice.farmerId.lastName ?? ""}`.trim()
-        : invoice?.orderId?.departmentId?.name || "-",
-      "Agronomist": invoice.agronomist || "-",
-      "Total Amount (₹)": invoice.totalAmount,
-      "Total Plants": invoice.totalPlants || 0,
-      "Payment Status": invoice.paymentStatus,
-      "Payment Mode": invoice.paymentMode || "-"
-    }))
-  );
+    const allData = res.data.invoices;
 
-  // Convert JSON to worksheet
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+    // Flatten invoices for Excel
+    const rows = allData.flatMap(group =>
+      group.invoices.map(invoice => ({
+        "Invoice Number": invoice.invoiceNumber,
+        "Invoice Date": new Date(invoice.invoiceDate).toLocaleDateString(),
+        "Payment Date": invoice.paymentDate
+          ? new Date(invoice.paymentDate).toLocaleDateString()
+          : "-",
+        "Farmer / Department": invoice?.farmerName || invoice?.department || "-",
+        "Agronomist": invoice.agronomist || "-",
+        "Total Amount (₹)": invoice.totalAmount,
+        "Total Plants": invoice.totalPlants || 0,
+        "Payment Status": invoice.paymentStatus,
+        "Payment Mode": invoice.paymentMode || "-"
+      }))
+    );
 
-  // Create a new workbook and append the sheet
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+    // Convert JSON to worksheet
+    const worksheet = XLSX.utils.json_to_sheet(rows);
 
-  // Export to Excel file
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
+    // Create workbook and append worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
 
-  const fileName = `Invoices_${filters.month}_${filters.year}.xlsx`;
-  saveAs(new Blob([excelBuffer], { type: "application/octet-stream" }), fileName);
+    // Export as Excel
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const fileName = `Invoices_${filters.month}_${filters.year}.xlsx`;
+    saveAs(new Blob([excelBuffer], { type: "application/octet-stream" }), fileName);
+
+  } catch (error) {
+    console.error("Error exporting invoices:", error);
+    alert("Failed to export invoices. Please try again.");
+  }
 };
 
     return (
@@ -161,11 +185,11 @@ const isNextDisabled = !maxDate ||
 
                     <div className="flex items-center gap-2 mb-4">
                         <button
-  onClick={exportToExcel}
-  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
->
-  <FiDownload /> Export to Excel
-</button>
+                            onClick={exportToExcel}
+                            className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                            <FiDownload /> Export to Excel
+                        </button>
                         <select
                             value={filters.status || ''}
                             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -213,7 +237,7 @@ const isNextDisabled = !maxDate ||
 
                         <button
                             type="button"
-                                                        disabled={isNextDisabled}
+                            disabled={isNextDisabled}
 
                             onClick={() => handleMonthChange(1)}
                             className={`p-2 bg-blue-50 rounded-lg cursor-pointer border border-blue-300 text-blue-500 ${isNextDisabled ? 'opacity-30' : ''}`}
@@ -236,13 +260,13 @@ const isNextDisabled = !maxDate ||
                                 <tr>
                                     <th className="px-3 py-3 font-semibold text-left">Invoice Number</th>
                                     <th className="px-3 py-3 font-semibold text-left">Invoice Date</th>
-                                    <th className="px-3 py-3 font-semibold text-left">Payment Date</th>
-                                    <th className="px-3 py-3 font-semibold text-left">Farmer / Dept</th>
+                                   
+                                    <th className="px-3 py-3 font-semibold text-left">Farmer</th>
+                                    <th className="px-3 py-3 font-semibold text-left">Department</th>
                                     <th className="px-3 py-3 font-semibold text-left">Agronomist</th>
                                     <th className="px-3 py-3 font-semibold text-left">Total Amount (₹)</th>
                                     <th className="px-3 py-3 font-semibold text-left">Total Plants</th>
-                                    <th className="px-3 py-3 font-semibold text-left">Payment Status</th>
-                                    <th className="px-3 py-3 font-semibold text-left">Payment Mode</th>
+                                    <th className="px-3 py-3 font-semibold text-left min-w-[150px]">Payment</th>
                                     <th className="px-3 py-3 font-semibold text-left">Actions</th>
                                 </tr>
                             </thead>
@@ -252,16 +276,20 @@ const isNextDisabled = !maxDate ||
                                         <tr key={invoice._id} className="even:bg-gray-100/70">
                                             <td className="p-2 text-blue-600 underline cursor-pointer" onClick={() => console.log('Open Invoice', invoice._id)}>{invoice.invoiceNumber}</td>
                                             <td className="p-3">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
-                                            <td className="p-2">{invoice.paymentDate ? new Date(invoice.paymentDate).toLocaleDateString() : '-'}</td>
-                                            <td className="p-2"> {`${invoice?.farmerId?.firstName ?? ""} ${invoice?.farmerId?.lastName ?? ""}`.trim() || "-"}</td>
+                                            <td className="p-2"> {`${invoice?.farmerName || "-"}`}</td>
+                                            <td className="p-2">{invoice.department || '-'}</td>
                                             <td className="p-2">{invoice.agronomist || '-'}</td>
                                             <td className="p-2 font-semibold"><FaRupeeSign className="inline" /> {invoice.totalAmount}</td>
                                             <td className="p-2">{invoice.totalPlants}</td>
                                             <td className="p-2">
+                                                <div className='flex'>
                                                 <StatusBubble icon={statusIcons[invoice.paymentStatus]} status={statusColors[invoice.paymentStatus]} size='xs' />
-                                                <span className={`px-2 py-1 text-xs rounded ${statusColors[invoice.paymentStatus]}`}>{invoice.paymentStatus}</span></td>
-                                            <td className="p-2">
-                                                <div className='flex gap-3 items-center'>{statusIcons[invoice.paymentMode] || '-'} {invoice.paymentMode}</div></td>
+                                                <span className={`px-2 py-1 text-xs rounded ${statusColors[invoice.paymentStatus]}`}>{invoice.paymentStatus}</span>
+                                                </div>
+                                                <div className='flex gap-3 items-center'>{statusIcons[invoice.paymentMode] || ''} {invoice.paymentMode}</div>
+                                                {invoice.paymentDate ? new Date(invoice.paymentDate).toLocaleDateString() : ''}
+                                                
+                                                </td>
                                             <td className="p-2  gap-2">
                                                 <div className='flex gap-4'>
                                                     <IconButton shape='pill' icon={<FiFile size={18} />} label='' onClick={() => navigate(`/view-invoice/${invoice._id}`)} title="View"></IconButton>
@@ -280,6 +308,7 @@ const isNextDisabled = !maxDate ||
                         </table>
                     </div>
                 )}
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
         </div>
     );
