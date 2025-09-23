@@ -139,19 +139,26 @@ const InvoiceList = () => {
     const allData = res.data.invoices;
 
     // Flatten invoices for Excel
-    const rows = allData.flatMap(group =>
-      group.invoices.map(invoice => ({
-        "Invoice Number": invoice.invoiceNumber,
-        "Invoice Date": new Date(invoice.invoiceDate).toLocaleDateString(),
+   const rows = allData.flatMap(group =>
+      (group.invoices || []).map(invoice => ({
+        "Invoice Number": invoice.invoiceNumber || "-",
+        "Invoice Date": invoice.invoiceDate
+          ? new Date(invoice.invoiceDate).toLocaleDateString()
+          : "-",
+
+        "Farmer": invoice.farmerName || "-",
+        "Address": invoice.farmerAddress || "-",
+        "Department": invoice.department || "-",
+        "Agronomist": invoice.agronomist || "-",
+
+        "Total Amount (₹)": invoice.totalAmount || 0,
+        "Total Plants": invoice.totalPlants || 0,
+
+        "Payment Status": invoice.paymentStatus || "-",
+        "Payment Mode": invoice.paymentMode || "-",
         "Payment Date": invoice.paymentDate
           ? new Date(invoice.paymentDate).toLocaleDateString()
-          : "-",
-        "Farmer / Department": invoice?.farmerName || invoice?.department || "-",
-        "Agronomist": invoice.agronomist || "-",
-        "Total Amount (₹)": invoice.totalAmount,
-        "Total Plants": invoice.totalPlants || 0,
-        "Payment Status": invoice.paymentStatus,
-        "Payment Mode": invoice.paymentMode || "-"
+          : "-"
       }))
     );
 
@@ -262,6 +269,7 @@ const InvoiceList = () => {
                                     <th className="px-3 py-3 font-semibold text-left">Invoice Date</th>
                                    
                                     <th className="px-3 py-3 font-semibold text-left">Farmer</th>
+                                    <th className="px-3 py-3 font-semibold text-left">Address</th>
                                     <th className="px-3 py-3 font-semibold text-left">Department</th>
                                     <th className="px-3 py-3 font-semibold text-left">Agronomist</th>
                                     <th className="px-3 py-3 font-semibold text-left">Total Amount (₹)</th>
@@ -277,6 +285,7 @@ const InvoiceList = () => {
                                             <td className="p-2 text-blue-600 underline cursor-pointer" onClick={() => console.log('Open Invoice', invoice._id)}>{invoice.invoiceNumber}</td>
                                             <td className="p-3">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
                                             <td className="p-2"> {`${invoice?.farmerName || "-"}`}</td>
+                                            <td className="p-2"> {`${invoice?.farmerAddress || "-"}`}</td>
                                             <td className="p-2">{invoice.department || '-'}</td>
                                             <td className="p-2">{invoice.agronomist || '-'}</td>
                                             <td className="p-2 font-semibold"><FaRupeeSign className="inline" /> {invoice.totalAmount}</td>
