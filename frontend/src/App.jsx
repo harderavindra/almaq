@@ -23,6 +23,19 @@ import UpdatePayment from './pages/UpdatePayment';
 import InvoiceList from './pages/InvoiceList';
 import OrderEditPage from './pages/OrderEditPage';
 import ChallanEditPage from './pages/ChallanEditPage';
+import ContactCreate from './pages/contacts/ContactCreate';
+import ContactList from './pages/contacts/ContactList';
+import ContactMaster from './pages/contacts/ContactMaster';
+import ContactsPage from './pages/contacts/ContactsPage';
+import Visitor from '../../backend/models/Visitor';
+import VisitorFormPanel from './pages/visitor/VisitorFormPage';
+import VisitorFormPage from './pages/visitor/VisitorFormPage';
+import VisitorTimelinePage from './pages/visitor/VisitorTimelinePage';
+import CreateTaskPage from './pages/tasks/CreateTaskPage';
+import TaskBatchList from './pages/tasks/taskBatchList';
+import TaskBatchDetail from './pages/tasks/TaskBatchDetail';
+
+
 
 function App() {
   return (
@@ -67,6 +80,18 @@ function App() {
               <Route path="/master/:tab?" element={<MasterPage />} />
               <Route path="/download" element={<DeliveredChalanPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              <Route path="/contacts/add-contact" element={<ContactCreate />} />
+              <Route path="/contacts/" element={<ContactsPage/>} />
+              <Route path="/visitors/add" element={<VisitorFormPage/>} />
+              <Route path="/visitors/" element={<VisitorTimelinePage/>} />
+        
+  <Route path="/task/task-batches/create" element={<CreateTaskPage />} />
+  <Route path="/task/task-batches" element={<TaskBatchList />} />
+  <Route path="/task/task-batches/:id" element={<TaskBatchDetail />} />
+
+
+              {/* <Route path="/visitors/timeline/:id" element={<VisitorTimelinePage/>} /> */}
             </Route>
           </Route>
         </Routes>

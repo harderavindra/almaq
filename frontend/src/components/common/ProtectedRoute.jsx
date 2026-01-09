@@ -16,7 +16,7 @@ if (loading) {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-
+``
   if (allowedRoles.length && !hasAccess(user.role, allowedRoles)) {
     return <Navigate to="/unauthorized" replace />;
   }

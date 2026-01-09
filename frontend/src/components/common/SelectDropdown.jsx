@@ -3,6 +3,7 @@ import React from 'react';
 const SelectDropdown = ({
   label,
   value,
+  size,
   onChange,
   options = [],
   optionLabel = 'label',
@@ -19,12 +20,12 @@ const SelectDropdown = ({
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <label className="">{label}</label>
+      <label className={`${ size == "sm" ? "text-xs" :" text-sm"}`}>{label}</label>
       <select
         value={value}
         name={name}
         onChange={onChange}
-        className={` capitalize border rounded-md   px-3 py-3  focus:border-blue-300 focus:outline-0 ${hasError ? 'ring-red-100 outline-red-300 ring-3 border-red-300':''}  ${disabled ? 'bg-gray-100 text-gray-300 border-gray-200 ':'bg-white border-gray-400'} ${className} `}
+        className={` capitalize border rounded-md   px-3 ${ size == "sm" ? "py-2" :" py-3"}  focus:border-blue-300 focus:outline-0 ${hasError ? 'ring-red-100 outline-red-300 ring-3 border-red-300':''}  ${disabled ? 'bg-gray-100 text-gray-300 border-gray-200 ':'bg-white border-gray-400'} ${className} `}
         required={required}
         disabled= {disabled}
       >

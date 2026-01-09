@@ -11,6 +11,7 @@ const roleOptions = [
   { label: 'Operator', value: 'operator' },
   { label: 'Delivery Manager', value: 'delivery_manager' },
   { label: 'Viewer', value: 'viewer' },
+  { label: 'Agent', value: 'agent' },
 ];
 
 const genderOptions = [

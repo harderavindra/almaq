@@ -21,6 +21,7 @@ import reportyRoutes from "./routes/reporty.routes.js";
 import invoiceRoutes from "./routes/invoice.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import visitorRoutes from "./routes/visitor.routes.js";
+import taskBatchRoutes from "./routes/taskBatch.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 
 dotenv.config();
@@ -60,7 +61,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.use('/api/ ', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api', signedUrlRouter);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/farmers", farmerRoutes);
@@ -74,6 +75,7 @@ app.use("/api/reports", reportyRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/visitors", visitorRoutes);
+app.use("/api/taskBatches", taskBatchRoutes);
 app.use("/api/tasks", taskRoutes);
 
 

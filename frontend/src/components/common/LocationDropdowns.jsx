@@ -45,6 +45,8 @@ const locationData = {
 
 const LocationDropdowns = ({
   onChange,
+  size,
+  gap,
   defaultState = '',
   defaultDistrict = '',
   defaultTaluka = '',
@@ -101,8 +103,9 @@ const LocationDropdowns = ({
     : [];
 
   return (
-    <div className={`${listClass} gap-3 ${className} w-full `}>
+    <div className={`${listClass}  ${className} w-full `}  style={{ gap: `${gap}px` }}>
       <SelectDropdown
+        size={ size == "sm" ? "sm" :"md"}
         label={hideLabel ? '' : 'State'}
         value={selectedState}
         onChange={(e) => {
@@ -118,6 +121,7 @@ const LocationDropdowns = ({
   
       {selectedState && (
         <SelectDropdown
+        size={ size == "sm" ? "sm" :"md"}
           label={hideLabel ? '' : 'District'}
           value={selectedDistrict}
           onChange={(e) => {
@@ -133,6 +137,7 @@ const LocationDropdowns = ({
 
       {selectedDistrict && (
         <SelectDropdown
+        size={ size == "sm" ? "sm" :"md"}
           label={hideLabel ? '' : 'Taluka'}
           value={selectedTaluka}
           onChange={(e) => setSelectedTaluka(e.target.value)}
@@ -145,6 +150,7 @@ const LocationDropdowns = ({
 
       {showCityInput && (
         <InputText
+        size={ size == "sm" ? "sm" :"md"}
           label={hideLabel ? '' : 'City/Village'}
           name="city"
           placeholder="Enter City or Village"

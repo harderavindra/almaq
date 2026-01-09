@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
         password: {type: String,required: true, select: false },
         phone: { type: String,},
         profilePic: {type: String,default: '', },
-        role: {type: String, enum: ['admin', 'manager', 'operator', 'delivery_manager', 'viewer'],
+        role: {type: String, enum: ['admin', 'manager', 'operator','agent', 'delivery_manager', 'viewer'],
             default: 'viewer',
         },
         isActive: {type: Boolean,default: true,},
