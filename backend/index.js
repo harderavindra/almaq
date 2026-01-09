@@ -19,6 +19,10 @@ import vehicleRoutes from "./routes/vehicle.routes.js";
 import utilityRoutes from "./routes/utility.routes.js";
 import reportyRoutes from "./routes/reporty.routes.js";
 import invoiceRoutes from "./routes/invoice.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
+import visitorRoutes from "./routes/visitor.routes.js";
+import taskRoutes from "./routes/task.routes.js";
+
 dotenv.config();
 
 const app = express();
@@ -43,7 +47,11 @@ app.use(cors({
 
 
 mongoose.connect(process.env.MONGODB_URL)
-    .then(() => console.log("Connected to MongoDB"))
+    .then(async () => {
+    console.log("DB Connected");
+
+
+})
     .catch((err) => console.error("MongoDB connection error:", err));
 
 
@@ -52,7 +60,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.use('/api/auth', authRoutes);
+app.use('/api/ ', authRoutes);
 app.use('/api', signedUrlRouter);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/farmers", farmerRoutes);
@@ -64,6 +72,9 @@ app.use("/api/orderItems", orderItemsRoutes);
 app.use("/api/utility", utilityRoutes);
 app.use("/api/reports", reportyRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/contacts", contactRoutes);
+app.use("/api/visitors", visitorRoutes);
+app.use("/api/tasks", taskRoutes);
 
 
 
