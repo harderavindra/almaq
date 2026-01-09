@@ -118,7 +118,7 @@ const TaskBatchDetail = () => {
               size="sm"
             />
             <div>{batch.createdBy?.firstName} {batch.createdBy?.lastName || "—"}</div>
-          </div>
+          </div> 
         </div>
 
         {/* STATUS CONTROL */}
