@@ -27,7 +27,6 @@ import ContactCreate from './pages/contacts/ContactCreate';
 import ContactList from './pages/contacts/ContactList';
 import ContactMaster from './pages/contacts/ContactMaster';
 import ContactsPage from './pages/contacts/ContactsPage';
-import Visitor from '../../backend/models/Visitor';
 import VisitorFormPanel from './pages/visitor/VisitorFormPage';
 import VisitorFormPage from './pages/visitor/VisitorFormPage';
 import VisitorTimelinePage from './pages/visitor/VisitorTimelinePage';
