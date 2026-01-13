@@ -1,6 +1,6 @@
 import React from 'react'
 import { FaTimesCircle } from 'react-icons/fa'
-import { FiCheck, FiClipboard, FiClock, FiEye, FiEyeOff, FiRotateCcw, FiStar, FiThumbsUp, FiUser } from 'react-icons/fi'
+import { FiCheck, FiClipboard, FiClock, FiEye, FiEyeOff, FiPhoneCall, FiPhoneMissed, FiRotateCcw, FiStar, FiThumbsDown, FiThumbsUp, FiUser } from 'react-icons/fi'
 import { HiOutlineRocketLaunch } from 'react-icons/hi2'
 import { LuShieldCheck } from "react-icons/lu";
 
@@ -37,14 +37,19 @@ const StatusBubble = ({status ='success',icon,  size= 'sm', className, onClick})
     const statusIcons = {
         star: <FiStar size={sizes[size]}/>,
         check: <FiCheck size={sizes[size]}/>,
-        reject: <FiRotateCcw size={sizes[size]}/>,
+        reject: <FiThumbsDown size={sizes[size]}/>,
         eye: <FiEye size={sizes[size]}/>,
         clock: <FiClock size={sizes[size]}/>,
         user: <FiUser size={sizes[size]}/>,
         done:<FiThumbsUp size={sizes[size]} />,
         pad:<FiClipboard size={sizes[size]} />,
         rocket:<HiOutlineRocketLaunch size={sizes[size]} />,
-        
+        callMissed:<FiPhoneMissed size={sizes[size]} />,
+        phoneCall:<FiPhoneCall size={sizes[size]} />,
+        phoneOff:<FiEyeOff size={sizes[size]} />,
+        thumbsDown:<FiThumbsDown size={sizes[size]} />,
+        thumbsUp:<FiThumbsUp size={sizes[size]} />,
+       
         shieldcheck:<LuShieldCheck size={sizes[size]} />
     }
    

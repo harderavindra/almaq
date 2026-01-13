@@ -7,6 +7,46 @@ import RichTextEditor from "../../components/task/RichTextEditor";
 const CreateTaskPage = () => {
   const navigate = useNavigate();
 
+  const [callOutcomeForm] = useState({
+  version: 1,
+  fields: [
+    {
+      key: "interested",
+      label: "Is user interested?",
+      type: "boolean",
+      required: true,
+    },
+    {
+      key: "demoScheduledAt",
+      label: "Demo Time",
+      type: "datetime",
+      visibleWhen: {
+        field: "interested",
+        equals: true,
+      },
+    },
+    {
+      key: "followUpRequired",
+      label: "Follow-up Required?",
+      type: "boolean",
+    },
+    {
+      key: "followUpAt",
+      label: "Follow-up Date",
+      type: "datetime",
+      visibleWhen: {
+        field: "followUpRequired",
+        equals: true,
+      },
+    },
+    {
+      key: "remarks",
+      label: "Additional Comments",
+      type: "textarea",
+    },
+  ],
+});
+
   /* =====================
      CORE FIELDS
   ===================== */
@@ -83,6 +123,8 @@ const CreateTaskPage = () => {
 
       contacts: selectedContacts,
       assignedUsers: selectedAgents,
+      callOutcomeForm,
+
     });
 
     alert("Task batch created successfully");

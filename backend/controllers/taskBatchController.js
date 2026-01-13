@@ -4,7 +4,74 @@ import TaskBatch from "../models/TaskBatch.js";
 import sanitizeHtml from "sanitize-html";
 
 
+const defaultForm = {
+  version: 1,
+  fields: [
+    {
+      key: "interested",
+      label: "Is user interested?",
+      type: "boolean",
+      required: true,
+    },
+    {
+      key: "demoScheduledAt",
+      label: "Demo Time",
+      type: "datetime",
+      visibleWhen: {
+        field: "interested",
+        equals: true,
+      },
+    },
+    {
+      key: "followUpRequired",
+      label: "Follow-up Required?",
+      type: "boolean",
+    },
+    {
+      key: "followUpAt",
+      label: "Follow-up Date",
+      type: "datetime",
+      visibleWhen: {
+        field: "followUpRequired",
+        equals: true,
+      },
+    },
+    {
+      key: "remarks",
+      label: "Additional Comments",
+      type: "textarea",
+    },
+  ],
+};
 
+
+function validateCallOutcomeForm(form) {
+  if (!form || !Array.isArray(form.fields)) {
+    throw new Error("Invalid call outcome form");
+  }
+
+  form.fields.forEach(field => {
+    if (!field.key || !field.label || !field.type) {
+      throw new Error("Each call outcome field must have key, label, and type");
+    }
+
+    const allowedTypes = [
+      "boolean",
+      "datetime",
+      "text",
+      "textarea",
+      "select",
+    ];
+
+    if (!allowedTypes.includes(field.type)) {
+      throw new Error(`Invalid field type: ${field.type}`);
+    }
+
+    if (field.type !== "select" && field.options?.length) {
+      throw new Error("Options allowed only for select fields");
+    }
+  });
+}
 export const createTaskBatch = async (req, res) => {
   try {
     const {
@@ -14,6 +81,7 @@ export const createTaskBatch = async (req, res) => {
       taskConfig = {},
       contacts = [],
       assignedUsers = [],
+      callOutcomeForm = null 
     } = req.body;
 
     if (!name) throw new Error("Batch name required");
@@ -45,6 +113,7 @@ export const createTaskBatch = async (req, res) => {
       priority,
       createdBy: req.user._id,
       status: "draft",
+callOutcomeForm: callOutcomeForm || defaultForm,
 
       purposeAndObjective: {
         title: purposeAndObjective.title || name,

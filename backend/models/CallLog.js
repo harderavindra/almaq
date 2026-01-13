@@ -25,7 +25,10 @@ const callLogSchema = new mongoose.Schema(
         "dnd",
       ],
     },
-
+     callOutcome: {
+      type: mongoose.Schema.Types.Mixed, // JSON answers
+      default: {},
+    },
     remarks: String,
   },
   { timestamps: true }

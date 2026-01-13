@@ -10,14 +10,40 @@ export const getTasks = async (req, res) => {
     filter.taskBatchId = req.query.taskBatchId;
   }
   console.log("Filter in getTasks:", filter);
-  
+
   const tasks = await Task.find(filter)
-  .populate("contactId")
-  .populate("assignedTo")
-  .sort({ dueAt: 1 });
-  
-  console.log("Filter in getTasks:", tasks);
-  res.json({ success: true, data: tasks });
+    .populate("contactId")
+    .populate("assignedTo")
+    .sort({ dueAt: 1 });
+
+  const taskIds = tasks.map(t => t._id);
+
+  const lastCalls = await CallLog.aggregate([
+    { $match: { taskId: { $in: taskIds } } },
+    { $sort: { callEnd: -1 } },
+    {
+      $group: {
+        _id: "$taskId",
+        disposition: { $first: "$disposition" },
+        remarks: { $first: "$remarks" },
+        callEnd: { $first: "$callEnd" },
+        duration: { $first: "$duration" },
+      },
+    },
+  ]);
+
+  const callMap = {};
+  lastCalls.forEach(c => {
+    callMap[c._id.toString()] = c;
+  });
+
+  const enrichedTasks = tasks.map(t => ({
+    ...t,
+    lastCall: callMap[t._id.toString()] || null,
+  }));
+
+  console.log("Filter in getTasks:", enrichedTasks);
+  res.json({ success: true, data: enrichedTasks });
 };
 
 

@@ -18,7 +18,7 @@ function recalculateTotals(progress = {}) {
 /* ======================================================
    SCHEMA
 ====================================================== */
-const taskBatchSchema = new mongoose.Schema(
+    const taskBatchSchema = new mongoose.Schema(
   {
     /* ---------- Identity ---------- */
     name: {
@@ -69,6 +69,28 @@ const taskBatchSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    callOutcomeForm: {
+  version: { type: Number, default: 1 },
+  fields: [
+    {
+      key: { type: String, required: true, trim: true },
+      label: { type: String, required: true, trim: true },
+      type: {
+        type: String,
+        enum: ["boolean", "datetime", "text", "textarea", "select"],
+        required: true,
+      },
+      required: { type: Boolean, default: false },
+      options: [String],
+      order: { type: Number, default: 0 },
+      visibleWhen: {
+        field: String,
+        equals: mongoose.Schema.Types.Mixed,
+      },
+    },
+  ],
+},
 
     /* ---------- Ownership ---------- */
     createdBy: {

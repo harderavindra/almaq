@@ -23,7 +23,10 @@ import contactRoutes from "./routes/contact.routes.js";
 import visitorRoutes from "./routes/visitor.routes.js";
 import taskBatchRoutes from "./routes/taskBatch.routes.js";
 import taskRoutes from "./routes/task.routes.js";
-
+import agentRoutes from "./routes/agent.routes.js";
+import adminDispositionRoutes from "./routes/adminDisposition.routes.js";
+import dispositionRoutes from "./routes/disposition.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 dotenv.config();
 
 const app = express();
@@ -77,7 +80,11 @@ app.use("/api/contacts", contactRoutes);
 app.use("/api/visitors", visitorRoutes);
 app.use("/api/taskBatches", taskBatchRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/agents", agentRoutes);
+app.use("/api/admin/dispositions", adminDispositionRoutes);
+app.use("/api/disposition", dispositionRoutes);
 
+app.use("/api/reports", reportRoutes);
 
 
 const PORT = process.env.PORT || 3000;

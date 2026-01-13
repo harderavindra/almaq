@@ -33,6 +33,10 @@ import VisitorTimelinePage from './pages/visitor/VisitorTimelinePage';
 import CreateTaskPage from './pages/tasks/CreateTaskPage';
 import TaskBatchList from './pages/tasks/taskBatchList';
 import TaskBatchDetail from './pages/tasks/TaskBatchDetail';
+import DispositionAdmin from './pages/master/DispositionAdmin';
+import AgentTaskScreen from './pages/agent/AgentTaskScreen';
+import AgentBatchList from './pages/agent/AgentBatchList';
+
 
 
 
@@ -45,19 +49,19 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route element={<PrintLayout />}>
-             <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
-              
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+
                 <Route path="/view-invoice/:id/" element={<ViewInvoicePage />} />
 
               </Route>
             </Route>
             <Route element={<AdminLayout />}>
               <Route path="/" element={<DashboardPage />} />
-                <Route path="/payment-invoice/:id/" element={<UpdatePayment />} />
+              <Route path="/payment-invoice/:id/" element={<UpdatePayment />} />
               <Route path="/new-user" element={<NewUserPage />} />
-                <Route path="/invoices" element={<InvoiceList />} />
+              <Route path="/invoices" element={<InvoiceList />} />
 
-              <Route element={<ProtectedRoute allowedRoles={['admin','manager']} />}>
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
                 <Route path="/users" element={<UsersPage />} />
               </Route>
               <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
@@ -81,14 +85,17 @@ function App() {
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
               <Route path="/contacts/add-contact" element={<ContactCreate />} />
-              <Route path="/contacts/" element={<ContactsPage/>} />
-              <Route path="/visitors/add" element={<VisitorFormPage/>} />
-              <Route path="/visitors/" element={<VisitorTimelinePage/>} />
-        
-  <Route path="/task/task-batches/create" element={<CreateTaskPage />} />
-  <Route path="/task/task-batches" element={<TaskBatchList />} />
-  <Route path="/task/task-batches/:id" element={<TaskBatchDetail />} />
+              <Route path="/contacts/" element={<ContactsPage />} />
+              <Route path="/visitors/add" element={<VisitorFormPage />} />
+              <Route path="/visitors/" element={<VisitorTimelinePage />} />
 
+              <Route path="/task/task-batches/create" element={<CreateTaskPage />} />
+              <Route path="/task/task-batches" element={<TaskBatchList />} />
+              <Route path="/task/task-batches/:id" element={<TaskBatchDetail />} />
+              <Route path="/master/disposition" element={<DispositionAdmin />} />
+              <Route path="/agent/batches" element={<AgentBatchList />} />
+              <Route path="/agent/batches/:batchId" element={<AgentTaskScreen />} />
+               
 
               {/* <Route path="/visitors/timeline/:id" element={<VisitorTimelinePage/>} /> */}
             </Route>
