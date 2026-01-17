@@ -69,8 +69,8 @@ export const getAgentTasks = async (req, res) => {
        LOAD BATCH ONCE
     ============================= */
     const batch = await TaskBatch.findById(batchId).select(
-      "name priority status purposeAndObjective callOutcomeForm progress"
-    );
+      "name priority status purposeAndObjective callOutcomeForm progress createdBy createdAt"
+    ).populate("createdBy", "firstName lastName email profilePic");
 
     /* =============================
        LOAD LAST CALL PER TASK

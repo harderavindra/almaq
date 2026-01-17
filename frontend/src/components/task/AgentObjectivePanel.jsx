@@ -10,7 +10,7 @@ const AgentObjectivePanel = ({ purpose }) => {
 
       {/* HEADER */}
       <div>
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-semibold text-center">
           🎯 {title || "Objective"}
         </h3>
       </div>

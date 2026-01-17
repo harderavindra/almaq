@@ -5,7 +5,7 @@ import {
   Pie,
   Cell,
   Tooltip,
-    Legend,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 
@@ -13,8 +13,8 @@ import {
    COLORS
 ========================= */
 const COLORS = {
-  yes: "#22c55e",
-  no: "#ef4444",
+  yes: "#4fcd8a",
+  no: "#eb4d4c",
 };
 
 /* =========================
@@ -60,6 +60,29 @@ const numberStats = (rows, key) => {
   };
 };
 
+
+const selectDistribution = (rows, key, options = []) => {
+  const counts = {};
+
+  // initialize known options
+  options.forEach(opt => {
+    counts[opt] = 0;
+  });
+
+  rows.forEach(r => {
+    const v = r.callOutcome?.[key];
+    if (v != null) {
+      counts[v] = (counts[v] || 0) + 1;
+    }
+  });
+
+  return Object.entries(counts).map(([name, value]) => ({
+    name,
+    value,
+  }));
+};
+
+
 /* =========================
    UI COMPONENTS
 ========================= */
@@ -85,17 +108,17 @@ const BooleanDonutChart = ({ data }) => {
             {data.map((d, i) => (
               <Cell
                 key={i}
-                fill={d.name === "Yes" ? "#22c55e" : "#ef4444"}
+                fill={d.name === "Yes" ? "#4fcd8a" : "#eb4d4c"}
               />
             ))}
-ref
+            ref
           </Pie>
 
           <Tooltip
             formatter={(value, name) => [`${value}`, name]}
           />
 
-      
+
         </PieChart>
       </ResponsiveContainer>
 
@@ -103,16 +126,16 @@ ref
       <div className="flex justify-center gap-6 text-sm">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-green-500" />
-          Yes: {data.find(d => d.name === "Yes")?.value || 0}
+          {data.find(d => d.name === "Yes")?.value || 0}
         </div>
 
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-red-500" />
-          No: {data.find(d => d.name === "No")?.value || 0}
+          {data.find(d => d.name === "No")?.value || 0}
         </div>
 
         <div className="text-gray-500">
-          Total: {total}
+          = {total}
         </div>
       </div>
     </div>
@@ -178,6 +201,17 @@ const CallOutcomeAnalytics = ({ batchId, batch }) => {
           stats: numberStats(rows, field.key),
         };
       }
+      if (field.type === "select") {
+        return {
+          field,
+          type: "select",
+          data: selectDistribution(
+            rows,
+            field.key,
+            field.options || []
+          ),
+        };
+      }
 
       return null;
     }).filter(Boolean);
@@ -201,51 +235,114 @@ const CallOutcomeAnalytics = ({ batchId, batch }) => {
 
   return (
     <div className="space-y-8 ">
-      <h2 className="text-lg font-semibold">
+      <h2 className="text-xl font-semibold">
         Call Outcome Analytics
       </h2>
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {analytics.map(item => {
-        const { field } = item;
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {analytics.map(item => {
+          const { field } = item;
 
-        if (item.type === "boolean") {
-          return (
-            <div
-              key={field.key}
-              className="border rounded-xl p-4 bg-white"
-            >
-              <div className="font-medium mb-2">
-                {field.label}
+          if (item.type === "boolean") {
+            return (
+              <div
+                key={field.key}
+                className="bg-blue-50/50 rounded-xl p-4"
+              >
+                <div className="font-medium mb-2">
+                  {field.label}
+                </div>
+                <BooleanDonutChart data={item.data} />
               </div>
-              <BooleanDonutChart data={item.data} />
-            </div>
-          );
-        }
+            );
+          }
 
-        if (item.type === "datetime") {
-          return (
-            <KpiCard
-              key={field.key}
-              label={field.label}
-              value={item.total}
+          if (item.type === "select") {
+            return (
+              <div
+                key={field.key}
+                className="bg-purple-50/50 rounded-xl p-4"
+              >
+                <div className="font-medium mb-2">
+                  {field.label}
+                </div>
+
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={item.data}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={4}
+                      label={renderLabel}
+                    >
+                      {item.data.map((_, i) => (
+                        <Cell
+                          key={i}
+                          fill={`hsl(${(i * 60) % 360}, 70%, 55%)`}
+                        />
+                      ))}
+                    </Pie>
+
+                    <Tooltip
+                      formatter={(value, name) => [`${value}`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <table className="w-full text-sm border-t">
+    <tbody>
+      {item.data.map((row, i) => (
+        <tr key={row.name} className="border-b last:border-b-0">
+          <td className="py-2 flex items-center gap-2">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{
+                backgroundColor: `hsl(${(i * 60) % 360}, 70%, 55%)`,
+              }}
             />
-          );
-        }
+            <span className="text-gray-700">
+              {row.name}
+            </span>
+          </td>
 
-        if (item.type === "number" && item.stats) {
-          return (
-            <div key={field.key}>
-              <div className="font-medium mb-2">
-                {field.label}
+          <td className="py-2 text-right font-medium">
+            {row.value}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
               </div>
-              <NumberStats stats={item.stats} />
-            </div>
-          );
-        }
+            );
+          }
 
-        return null;
-      })}
-    </div>
+
+
+          // if (item.type === "datetime") {
+          //   return (
+          //     <KpiCard
+          //       key={field.key}
+          //       label={field.label}
+          //       value={item.total}
+          //     />
+          //   );
+          // }
+
+          // if (item.type === "number" && item.stats) {
+          //   return (
+          //     <div key={field.key}>
+          //       <div className="font-medium mb-2">
+          //         {field.label}
+          //       </div>
+          //       <NumberStats stats={item.stats} />
+          //     </div>
+          //   );
+          // }
+
+          return null;
+        })}
+      </div>
     </div>
   );
 };

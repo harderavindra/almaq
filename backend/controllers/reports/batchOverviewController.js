@@ -83,14 +83,95 @@ export const batchOverview = async (req, res) => {
 };
 
 
-export const dispositionAnalysis = async (req, res) => {
+export const dispositionContactAnalysis = async (req, res) => {
   const { batchId } = req.params;
 
   const taskIds = await Task.find({ taskBatchId: batchId })
     .distinct("_id");
 
   const data = await CallLog.aggregate([
-    { $match: { taskId: { $in: taskIds } } },
+    // 1️⃣ Only completed calls
+    {
+      $match: {
+        taskId: { $in: taskIds },
+        callEnd: { $ne: null },
+        disposition: { $ne: null },
+      },
+    },
+
+    // 2️⃣ Latest call per contact first
+    {
+      $sort: {
+        contactId: 1,
+        callEnd: -1,
+      },
+    },
+
+    // 3️⃣ One record per contact
+    {
+      $group: {
+        _id: "$contactId",
+        disposition: { $first: "$disposition" },
+      },
+    },
+
+    // 4️⃣ Count contacts by disposition
+    {
+      $group: {
+        _id: "$disposition",
+        count: { $sum: 1 },
+      },
+    },
+
+    { $sort: { count: -1 } },
+  ]);
+
+  res.json({ success: true, data });
+};
+
+
+export const dispositionAttemptsAnalysis = async (req, res) => {
+  const { batchId } = req.params;
+
+  const taskIds = await Task.find({ taskBatchId: batchId })
+    .distinct("_id");
+
+  const data = await CallLog.aggregate([
+    {
+      $match: {
+        taskId: { $in: taskIds },
+      },
+    },
+    {
+      $group: {
+        _id: { $ifNull: ["$disposition", "N/A"] },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+  ]);
+
+  res.json({
+    success: true,
+    data,
+  });
+};
+
+
+export const dispositionCompletedAnalysis = async (req, res) => {
+  const { batchId } = req.params;
+
+  const taskIds = await Task.find({ taskBatchId: batchId })
+    .distinct("_id");
+
+  const data = await CallLog.aggregate([
+    {
+      $match: {
+        taskId: { $in: taskIds },
+        callEnd: { $ne: null },
+        disposition: { $ne: null },
+      },
+    },
     {
       $group: {
         _id: "$disposition",
@@ -100,7 +181,10 @@ export const dispositionAnalysis = async (req, res) => {
     { $sort: { count: -1 } },
   ]);
 
-  res.json({ success: true, data });
+  res.json({
+    success: true,
+    data,
+  });
 };
 
 

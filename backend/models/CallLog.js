@@ -24,6 +24,7 @@ const callLogSchema = new mongoose.Schema(
         "wrong-number",
         "dnd",
       ],
+      
     },
      callOutcome: {
       type: mongoose.Schema.Types.Mixed, // JSON answers

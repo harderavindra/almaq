@@ -52,9 +52,9 @@ const StatusSidebar = ({
     <div className="w-60 h-full py-10 sticky top-0">
       <ul className="space-y-2">
         {canAdd && addPath && (
-          <li>
+          <li>  
             <Link
-              to={addPath}
+              to={addPath} 
               className="cursor-pointer px-5 py-2 mb-10 rounded-full flex gap-2 items-center justify-center bg-green-500 text-white hover:bg-green-600"
             >
               <FiPlus size={18} />

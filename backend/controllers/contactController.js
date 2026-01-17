@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Contact from "../models/Contact.js";
 
 export const createContact = async (req, res) => {
@@ -17,7 +18,103 @@ export const createContact = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+export const getContactsTaskbatch = async (req, res) => {
+  try {
+    console.log("Fetching contacts for task batch");
+    const {
+      search,
+      state,
+      district,
+      taluka,
+      category,
+      tag,
+      callStatus,
+      ownerId,
+      dnd,
+      language,
+      excludeIds,
+      page = 1,
+      limit = 20,
+    } = req.query;
 
+    const query = {
+      status: { $ne: "deleted" }, // safety
+    };
+
+    /* =====================
+       SEARCH
+    ===================== */
+    if (search) {
+      query.$or = [
+        { fullName: new RegExp(search, "i") },
+        { mobile: new RegExp(search, "i") },
+      ];
+    }
+
+    /* =====================
+       LOCATION
+    ===================== */
+    if (state) query["address.state"] = state;
+    if (district) query["address.district"] = district;
+    if (taluka) query["address.taluka"] = taluka;
+
+    /* =====================
+       FILTERS
+    ===================== */
+    if (category) query.categories = category;
+    if (tag) query.tags = tag;
+    if (callStatus) query.callStatus = callStatus;
+    if (ownerId) query.ownerId = ownerId;
+    if (language) query.preferredLanguage = language;
+    if (dnd !== undefined) query.doNotDisturb = dnd === "true";
+
+    /* =====================
+       EXCLUDE IDS (TaskBatch)
+    ===================== */
+    if (excludeIds) {
+      const ids = excludeIds
+        .split(",")
+        .filter(Boolean)
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      query._id = { $nin: ids };
+    }
+
+    /* =====================
+       PAGINATED QUERY (FIXED)
+    ===================== */
+    const [contacts, total] = await Promise.all([
+      Contact.find(query)
+        .select(
+          "firstName lastName fullName mobile address gender doNotDisturb"
+        )
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit))
+        .lean(),
+
+      Contact.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      data: contacts,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (err) {
+    console.error("GET CONTACTS ERROR", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch contacts",
+      error: err.message,
+    });
+  }
+};
 export const getContacts = async (req, res) => {
   try {
     const {
@@ -59,7 +156,6 @@ export const getContacts = async (req, res) => {
     .skip((page - 1) * limit)
     .limit(limit)
     .sort({ createdAt: -1 });
-    console.log("contacts" + contacts)
 
     const total = await Contact.countDocuments(query);
 // console.log( "controller" + contacts)

@@ -81,7 +81,7 @@ export const createTaskBatch = async (req, res) => {
       taskConfig = {},
       contacts = [],
       assignedUsers = [],
-      callOutcomeForm = null 
+      callOutcomeForm = null
     } = req.body;
 
     if (!name) throw new Error("Batch name required");
@@ -113,7 +113,7 @@ export const createTaskBatch = async (req, res) => {
       priority,
       createdBy: req.user._id,
       status: "draft",
-callOutcomeForm: callOutcomeForm || defaultForm,
+      callOutcomeForm: callOutcomeForm || defaultForm,
 
       purposeAndObjective: {
         title: purposeAndObjective.title || name,

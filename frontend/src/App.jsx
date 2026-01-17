@@ -38,6 +38,7 @@ import AgentTaskScreen from './pages/agent/AgentTaskScreen';
 import AgentBatchList from './pages/agent/AgentBatchList';
 
 
+import "react-datepicker/dist/react-datepicker.css";
 
 
 function App() {
