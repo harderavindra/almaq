@@ -14,10 +14,10 @@ import StatusBubble from "../../components/common/StatusBubble";
 import DialerPopover from "../../components/task/DialerPopover";
 import TaskCardSkeleton from "../../components/task/TaskCardSkeleton";
 const ANALYTICS_MODES = {
-     CONTACTS: "contacts",
+    CONTACTS: "contacts",
     ATTEMPTS: "attempts",
     COMPLETED: "completed",
-   
+
 };
 
 const dispositionStatusMap = {
@@ -75,7 +75,6 @@ const AgentTaskScreen = () => {
     const [dispositions, setDispositions] = useState([]);
     const [dispositionFacts, setDispositionFacts] = useState([]);
 
-    const [activeCall, setActiveCall] = useState(null);
     const [selectedDisposition, setSelectedDisposition] = useState(null);
     const [callOutcomeValues, setCallOutcomeValues] = useState({});
     const [loading, setLoading] = useState(true);
@@ -93,9 +92,22 @@ const AgentTaskScreen = () => {
 
 
     const [analyticsMode, setAnalyticsMode] = useState(ANALYTICS_MODES.CONTACTS);
+    const DISPOSITION_COLORS = {
+        connected: "#2ecc71",        // green
+        busy: "#f39c12",             // orange
+        "no answer": "#f1c40f",       // yellow
+        callback: "#3498db",          // blue
+        "not interested": "#e74c3c",  // red
+        "wrong number": "#9b59b6",    // purple
+        dnd: "#34495e",               // dark gray
+        "Not Disposed": "#95a5a6",    // light gray (attempts only)
+    };
 
+    const getColorForDisposition = (name) => {
+        return DISPOSITION_COLORS[name] || "#bdc3c7"; // fallback gray
+    };
 
-    const startDialer = async (task, index) => {
+    const startDialer = async (task, index = 0, mode = "single") => {
         const res = await api.post("/disposition/calls/start", {
             taskId: task._id,
             contactId: task.contactId._id,
@@ -147,40 +159,9 @@ const AgentTaskScreen = () => {
         );
     };
 
-    /* =====================
-       START CALL
-    ===================== */
-    const startCall = async (task) => {
-        const res = await api.post("/disposition/calls/start", {
-            taskId: task._id,
-            contactId: task.contactId._id,
-        });
 
-        setActiveCall({
-            task,
-            callLogId: res.data.data.callLogId,
-        });
-    };
 
-    /* =====================
-       SUBMIT DISPOSITION
-    ===================== */
-    const submitDisposition = async () => {
 
-        const { remarks, ...cleanOutcome } = callOutcomeValues;
-
-        await api.post("/disposition/calls/end", {
-            callLogId: activeCall.callLogId,
-            dispositionCode: selectedDisposition,
-            callOutcome: cleanOutcome,
-            remarks,
-        });
-
-        setActiveCall(null);
-        setSelectedDisposition(null);
-        setCallOutcomeValues({});
-        loadData();
-    };
 
     const activeDisposition = dispositions.find(
         d => d.code === selectedDisposition
@@ -253,11 +234,11 @@ const AgentTaskScreen = () => {
         {loading ? (
             <TaskCardSkeleton />
         ) : (
-            <div className=" py-6 w-full flex gap-10 ">
+            <div className=" py-6 w-full flex gap-10">
                 <div className="w-full   space-y-6 bg-white rounded-xl px-10 py-5 flex flex-col gap-6">
                     <div className="flex justify-between items-start gap-6">
-                        <div className="w-full">
-                            <h1 className="text-2xl font-semibold relative ">
+                        <div className="w-full  ">
+                            <h1 className="text-2xl font-semibold relative  ">
                                 {batch.name}
                                 <button
                                     onClick={() => setShowCenterInfo((p) => !p)}
@@ -266,7 +247,7 @@ const AgentTaskScreen = () => {
                                     <FiClipboard size={24} />
                                 </button>
                             </h1>
-                            <div className="text-sm flex gap-4 items-center ">
+                            <div className="text-sm flex gap-4 items-center mb-5 ">
                                 <Avatar
                                     src={batch.createdBy?.profilePic}
                                     alt={batch.createdBy?.firstName}
@@ -278,27 +259,28 @@ const AgentTaskScreen = () => {
                                     <p>{formatDateTime(batch.createdAt)}</p>
                                 </div>
                             </div>
-                            <div>
+                            <h2 className="mb-3 font-semibold">{analyticsMode === ANALYTICS_MODES.COMPLETED ? "Completed Calls (Performance)" : analyticsMode === ANALYTICS_MODES.ATTEMPTS ? "Dial Attempts (Operational)" : analyticsMode === ANALYTICS_MODES.CONTACTS ? "Final Contact Outcome" : ""}</h2>
+
+                            <div className="flex gap-3">
                                 {dispositionFacts.map((d, index) => (
                                     <div
                                         key={index}
-                                        className="px-3 py-1 bg-gray-100 rounded-full"
+                                        className="px-3 py-3 border border-gray-300 rounded-xl text-xs flex flex-col w-full text-center items-center gap-2 uppercase"
                                     >
-                                        {(d._id ? d._id.replace(/-/g, " ") : "N/A")}:{" "}
-                                        <span className="font-semibold">{d.count}</span>
+                                        <span className={`font-semibold text-lg w-8 h-8 rounded-full text-white`} style={{ background: getColorForDisposition(d._id.replace(/-/g, " ")) }}>{d.count}</span>
+
+                                        {(d._id ? d._id.replace(/-/g, " ") : "N/A")}{" "}
                                     </div>
                                 ))}
 
 
-                                <div className="mt-3 text-xs text-gray-500">
-                                    {/* Total Calls: {totalCalls} */}
-                                </div>
+
                             </div>
                             {/* <BatchOverviewCard batchId={batchId} /> */}
                         </div>
                         <div className="w-[400px]">
 
-                            <div className="inline-flex bg-gray-100 rounded-xl p-1">
+                            <div className="inline-flex bg-gray-100 rounded-xl p-1 mb-3">
                                 {[
                                     { key: ANALYTICS_MODES.CONTACTS, label: "Contacts" },
                                     { key: ANALYTICS_MODES.ATTEMPTS, label: "Attempts" },
@@ -307,10 +289,9 @@ const AgentTaskScreen = () => {
                                     <button
                                         key={tab.key}
                                         onClick={() => setAnalyticsMode(tab.key)}
-                                        className={`px-4 py-2 text-sm rounded-lg transition
-        ${analyticsMode === tab.key
-                                                ? "bg-white shadow font-semibold"
-                                                : "text-gray-500 hover:text-gray-700"
+                                        className={`px-4 py-2 text-sm rounded-lg transition ${analyticsMode === tab.key
+                                            ? "bg-white shadow font-semibold"
+                                            : "text-gray-500 hover:text-gray-700"
                                             }`}
                                     >
                                         {tab.label}
@@ -320,9 +301,9 @@ const AgentTaskScreen = () => {
 
 
                             <DispositionAnalysis
-                              batchId={batchId}
-  mode={analyticsMode}
-  onDispositionLoad={setDispositionFacts}
+                                batchId={batchId}
+                                mode={analyticsMode}
+                                onDispositionLoad={setDispositionFacts}
                             />
                         </div>
                     </div>
@@ -335,42 +316,14 @@ const AgentTaskScreen = () => {
                         </div>
                     </div>
                 </div>
-                <div className="call-tab-conatiner w-full max-w-lg">
+                <div className="call-tab-conatiner w-full max-w-[520px]">
                     <div className="flex  gap-2 px-6">
                         <button className={`${selectedTab === "pending" ? "bg-white" : "bg-gray-200"} rounded-t-xl px-5 py-2 cursor-pointer`} onClick={() => setSelectedTab("pending")}>  Pending</button>
                         <button className={`${selectedTab === 'completed' ? "bg-white" : "bg-gray-200"} rounded-t-xl px-5 py-2 cursor-pointer`} onClick={() => setSelectedTab('completed')}>Completed</button>
                     </div>
                     {selectedTab === 'completed' && (
                         <div className="w-full relative bg-white rounded-xl px-10 py-5">
-                            <div
-                                className={`transition-all duration-300 ease-out overflow-hidden absolute w-full min-h-screen -left-0 top-0 bg-white rounded-xl  shadow-xl border border-gray-100
-    ${showCenterInfo ? "max-h-[500px] opacity-100 mb-6 z-10" : "max-h-0 opacity-0"}
-  `}
-                            >
-                                <h2 className="text-xl font-semibold  relative p-4">Purpose & Objective
-                                    <button
-                                        onClick={() => setShowCenterInfo((p) => !p)}
-                                        className="ml-2 text-sm text-gray-600 absolute top-5 right-2"
-                                    >
-                                        <FiX size={32} />
-                                    </button>
-                                </h2>
-                                <div className=" border-b border-gray-300"></div>
-                                <div className="p-5  overflow-y-auto ">
-                                    <div className="">
-                                        {batch.purposeAndObjective?.title || "Purpose & Objective"}
-                                    </div>
-                                    <div className="" >
-                                        <div dangerouslySetInnerHTML={{ __html: batch.purposeAndObjective?.summary || "—" }} />
-                                    </div>
-                                    {batch.purposeAndObjective?.agentGoal && (
-                                        <div className="text-xs text-gray-500">
-                                            Agent Goal: {batch.purposeAndObjective.agentGoal}
-                                        </div>
-                                    )}
 
-                                </div>
-                            </div>
                             <div className="w-full flex flex-col gap-4">
                                 <h3 className="text-lg font-semibold text-gray-700">
                                     Completed Calls
@@ -454,9 +407,12 @@ const AgentTaskScreen = () => {
                                                             </div>
                                                         </div>
                                                         {task.status !== "completed" && (
-                                                            <button className="rounded-full bg-blue-600 text-white h-12 w-12 flex items-center justify-center" onClick={() => startCall(task)}
-                                                                disabled={!!activeCall && activeCall.task._id !== task._id}
-
+                                                            <button
+                                                                className={`rounded-full h-12 w-12 flex items-center justify-center
+    ${dialerOpen ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 text-white"}
+  `}
+                                                                disabled={dialerOpen}
+                                                                onClick={() => startDialer(task)}
                                                             >
                                                                 <FiPhone className="text-lg" />
                                                             </button>
@@ -575,9 +531,12 @@ const AgentTaskScreen = () => {
                                                     </div>
                                                 </div>
                                                 {task.status !== "completed" && (
-                                                    <button className="rounded-full bg-blue-600 text-white h-12 w-12 flex items-center justify-center" onClick={() => startCall(task)}
-                                                        disabled={!!activeCall && activeCall.task._id !== task._id}
-
+                                                    <button
+                                                        className={`rounded-full h-12 w-12 flex items-center justify-center
+    ${dialerOpen ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 text-white"}
+  `}
+                                                        disabled={dialerOpen}
+                                                        onClick={() => startDialer(task)}
                                                     >
                                                         <FiPhone className="text-lg" />
                                                     </button>
@@ -593,118 +552,7 @@ const AgentTaskScreen = () => {
                                 })
                             }
 
-                            {/* =====================
-                            DISPOSITION MODAL
-                        ===================== */}
-                            {activeCall && (
-                                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-                                    <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
-                                        <h3 className="font-semibold">
-                                            Call Outcome – {activeCall.task.contactId.firstName}
-                                        </h3>
 
-                                        <div className="flex flex-col gap-4">
-                                            <label className="text-sm font-medium pb-6">
-                                                Call Disposition
-                                            </label>
-
-                                            <div className="grid grid-cols-3 gap-3">
-                                                {dispositions.map((d) => (
-                                                    <button
-                                                        key={d._id}
-                                                        type="button"
-                                                        onClick={() => setSelectedDisposition(d.code)}
-                                                        className={` border border-blue-100  rounded-lg p-3 text-center flex flex-col justify-center items-center transition
-                                                ${selectedDisposition === d.code
-                                                                ? "border-blue-500 bg-blue-50"
-                                                                : "hover:border-gray-400"
-                                                            }`}
-                                                    >
-                                                        <FiPhone className="text-lg flex justify-center items-center " />
-                                                        <div className="font-medium text-xs">
-                                                            {d.label}
-                                                        </div>
-
-                                                        {d.description && (
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                {d.description}
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        {activeDisposition?.requiresCallOutcome && (
-                                            <div className="space-y-4">
-
-
-                                                {
-                                                    batch.callOutcomeForm.fields.map((field) =>
-                                                        isFieldVisible(field) ? (
-                                                            <div key={field.key}>
-                                                                <label className="text-sm font-medium">
-                                                                    {field.label}
-                                                                </label>
-
-                                                                {field.type === "boolean" && (
-                                                                    <select
-                                                                        className="border p-2 w-full"
-                                                                        onChange={(e) =>
-                                                                            setCallOutcomeValues((p) => ({
-                                                                                ...p,
-                                                                                [field.key]: e.target.value === "true",
-                                                                            }))
-                                                                        }
-                                                                    >
-                                                                        <option value="">Select</option>
-                                                                        <option value="true">Yes</option>
-                                                                        <option value="false">No</option>
-                                                                    </select>
-                                                                )}
-
-                                                                {field.type === "datetime" && (
-                                                                    <input
-                                                                        type="datetime-local"
-                                                                        className="border p-2 w-full"
-                                                                        onChange={(e) =>
-                                                                            setCallOutcomeValues((p) => ({
-                                                                                ...p,
-                                                                                [field.key]: e.target.value,
-                                                                            }))
-                                                                        }
-                                                                    />
-                                                                )}
-
-                                                                {field.type === "textarea" && (
-                                                                    <textarea
-                                                                        className="border p-2 w-full"
-                                                                        rows={3}
-                                                                        onChange={(e) =>
-                                                                            setCallOutcomeValues((p) => ({
-                                                                                ...p,
-                                                                                [field.key]: e.target.value,
-                                                                            }))
-                                                                        }
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        ) : null
-                                                    )}
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-2 gap-2 pt-3">
-                                            <Button onClick={submitDisposition}>Submit</Button>
-                                            <Button
-                                                variant="ghost"
-                                                onClick={() => setActiveCall(null)}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
@@ -801,6 +649,49 @@ const AgentTaskScreen = () => {
 
             </div>
         )}
+
+        <div
+            className={`fixed inset-y-0 left-0 w-full max-w-lg px-6 py-4 bg-black/50
+    transition-transform duration-300 ease-out z-40 
+    ${showCenterInfo ? "translate-x-0" : "-translate-x-full"}
+  `}
+        >
+            <div className="bg-white shadow-xl border border-gray-100">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-semibold">
+                    Purpose & Objective
+                </h2>
+                <button
+                    onClick={() => setShowCenterInfo(false)}
+                    className="text-gray-600"
+                >
+                    <FiX size={28} />
+                </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="h-[calc(100vh-64px)] overflow-y-auto p-5">
+                <div className="font-medium mb-2">
+                    {batch?.purposeAndObjective?.title || "Purpose & Objective"}
+                </div>
+
+                <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{
+                        __html: batch?.purposeAndObjective?.summary || "—",
+                    }}
+                />
+
+{batch?.purposeAndObjective?.agentGoal && (
+                    <div className="mt-4 text-xs text-gray-500">
+                        Agent Goal: {batch?.purposeAndObjective?.agentGoal}
+                    </div>
+                )}
+            </div>
+            </div>
+        </div>
+
     </div>
     );
 };

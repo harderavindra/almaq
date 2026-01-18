@@ -8,21 +8,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const COLORS = [
-  "#7bd8cd",
-  "#fd933d",
-  "#fdc95b",
-  "#eb4d4c",
-  "#c26db1",
-  "#0a689c",
-  "#1ca39f",
-  "#9C2C72",
-];
+const DISPOSITION_COLORS = {
+  connected: "#2ecc71",        // green
+  busy: "#f39c12",             // orange
+  "no answer": "#f1c40f",       // yellow
+  callback: "#3498db",          // blue
+  "not interested": "#e74c3c",  // red
+  "wrong number": "#9b59b6",    // purple
+  dnd: "#34495e",               // dark gray
+  "Not Disposed": "#95a5a6",    // light gray (attempts only)
+};
 
 const DispositionAnalysis = ({ batchId, onDispositionLoad, mode }) => {
   const [rows, setRows] = useState([]);
   console.log("DispositionAnalysis mode:", mode);
-
+  const getColorForDisposition = (name) => {
+  return DISPOSITION_COLORS[name] || "#bdc3c7"; // fallback gray
+};
   /* =====================
      API MAPPING
   ===================== */
@@ -99,11 +101,11 @@ const DispositionAnalysis = ({ batchId, onDispositionLoad, mode }) => {
   ===================== */
   return (
     <div className="bg-blue-50/50 rounded-xl p-4 space-y-3">
-      <h2 className="font-semibold text-sm text-center">
+      {/* <h2 className="font-semibold text-sm text-center">
         {mode === "attempts" && "Dial Attempts (Operational)"}
         {mode === "completed" && "Completed Calls (Performance)"}
         {mode === "contacts" && "Final Contact Outcome"}
-      </h2>
+      </h2> */}
 
       <ResponsiveContainer width="100%" height={160}>
         <PieChart>
@@ -116,12 +118,12 @@ const DispositionAnalysis = ({ batchId, onDispositionLoad, mode }) => {
             paddingAngle={3}
             label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
           >
-            {chartData.map((_, index) => (
-              <Cell
-                key={index}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
+          {chartData.map((entry, index) => (
+  <Cell
+    key={index}
+    fill={getColorForDisposition(entry.name)}
+  />
+))}
           </Pie>
 
           <Tooltip
