@@ -64,7 +64,7 @@ function recalculateTotals(progress = {}) {
       completed: { type: Number, default: 0 },
       failed: { type: Number, default: 0 },
     },
-
+    
     totalTasks: {
       type: Number,
       default: 0,

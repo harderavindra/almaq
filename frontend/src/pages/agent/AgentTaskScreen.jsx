@@ -202,7 +202,13 @@ const AgentTaskScreen = () => {
         setSelectedDisposition(null);
         setCallOutcomeValues({});
 
-        const nextTask = tasks[dialerIndex + 1];
+       const nextTask = tasks.find(
+  (t) =>
+    t._id !== dialerTask._id &&
+    t.status !== "completed" &&
+    t.attemptCount === 0 &&
+    !t.lastCall?.disposition
+);
         if (nextTask) {
             startDialer(nextTask, dialerIndex + 1);
         } else {
@@ -656,7 +662,7 @@ const AgentTaskScreen = () => {
     ${showCenterInfo ? "translate-x-0" : "-translate-x-full"}
   `}
         >
-            <div className="bg-white shadow-xl border border-gray-100">
+            <div className="bg-white shadow-xl border border-gray-100 rounded-xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-xl font-semibold">

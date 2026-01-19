@@ -172,23 +172,97 @@ export const createTaskBatch = async (req, res) => {
 };
 
 
+
 export const getTaskBatches = async (req, res) => {
   const { status } = req.query;
 
-  const filter = {
+  const matchStage = {
     createdBy: req.user._id,
   };
 
   if (status) {
-    filter.status = status;
+    matchStage.status = status;
   }
 
-  const batches = await TaskBatch.find(filter)
-    .sort({ createdAt: -1 })
-    .lean();
+  const batches = await TaskBatch.aggregate([
+    /* 1. Filter batches */
+    { $match: matchStage },
+
+    /* 2. Sort latest first */
+    { $sort: { createdAt: -1 } },
+
+    /* 3. Lookup tasks for each batch */
+    {
+      $lookup: {
+        from: "tasks",
+        localField: "_id",
+        foreignField: "taskBatchId",
+        as: "tasks",
+      },
+    },
+
+    /* 4. Extract unique assignedTo user IDs */
+    {
+      $addFields: {
+        assignedUserIds: {
+          $setUnion: ["$tasks.assignedTo", []],
+        },
+      },
+    },
+
+    /* 5. Lookup user details */
+    {
+      $lookup: {
+        from: "users",
+        localField: "assignedUserIds",
+        foreignField: "_id",
+        as: "assignedUsers",
+        pipeline: [
+          {
+            $project: {
+              firstName: 1,
+              lastName: 1,
+              email: 1,
+              profilePic: 1,
+            },
+          },
+        ],
+      },
+    },
+
+    /* 6. Populate createdBy */
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+        pipeline: [
+          {
+            $project: {
+              firstName: 1,
+              lastName: 1,
+              email: 1,
+              profilePic: 1,
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$createdBy" },
+
+    /* 7. Cleanup payload */
+    {
+      $project: {
+        tasks: 0,
+        assignedUserIds: 0,
+      },
+    },
+  ]);
 
   res.json({ success: true, data: batches });
 };
+
 
 
 export const getTaskBatchById = async (req, res) => {
