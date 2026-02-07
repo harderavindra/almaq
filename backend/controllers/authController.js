@@ -87,6 +87,8 @@ export const loginUser = async (req, res) => {
       .json({
         success: true,
         message: 'Login successful.',
+        accessToken,          // ✅ ADD THIS
+    refreshToken,         // ✅ ADD THIS (mobile only)
         data: {
           _id: user._id,
           firstName: user.firstName,

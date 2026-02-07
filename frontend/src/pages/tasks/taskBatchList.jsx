@@ -63,33 +63,35 @@ const TaskBatchList = () => {
             <div className="flex flex-col gap-4">
               {batches.map(batch => (
                 <div key={batch._id} className="flex justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow items-center">
-                  <h2 className="px-4 text-lg font-medium max-w-sm">{batch.name} </h2>
-
-                  <div className="p-3">
-                    <StatusBubbleText status={statusMap(batch.status)} size='md' icon={null} text={batch.status} />
-                    {batch.priority}
-                  </div>
-                  <div className="p-3">{batch.totalTasks}</div>
-                  <div className="p-3">
-                    <FiCalendar className="inline mr-2" />
-                    {new Date(batch.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="assigned-users flex items-center -gap-8 px-3">
+                  <h2 className="px-4 text-lg font-medium max-w-sm min-w-sm">{batch.name} </h2>
+                  <div className=" flex items-center ">
+                    <div className="assigned-users flex items-center -gap-8 px-3">
                     {batch.assignedUsers.map((user) => (
-                      <div key={user._id} className="avatar-item group -ml-2">
-                        <div className="relative bg-white h-8 w-8 rounded-full shadow-[-4px_0_4px_0_#37415157]">
+                      <div key={user._id} className="avatar-item group -ml-2 hover:z-10">
+                        <div className="relative bg-white h-8 w-8 rounded-full  ">
                         <Avatar
                           size="sm"
-                          src={user.avatarUrl}
+                          src={user.profilePic}
                           alt={`${user.firstName} ${user.lastName}`}
                         />
-                        <span className="avatar-name absolute opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs rounded px-2 py-1 -top-8 whitespace-nowrap">
+                        <span className="avatar-name absolute uppercase -left-[50%] opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs rounded px-2 py-1 -top-8 whitespace-nowrap">
                           {user.firstName} {user.lastName}
                         </span>
                       </div>
                       </div>
                     ))}
                   </div>
+                  <div className="p-3">
+                    <StatusBubbleText status={statusMap(batch.status)} size='md' icon={null} text={batch.status} />
+                  
+                  </div>
+                    {batch.priority}
+                  {/* <div className="p-3">{batch.totalTasks}</div> */}
+                  <div className="p-3">
+                    <FiCalendar className="inline mr-2" />
+                    {new Date(batch.createdAt).toLocaleDateString()}
+                  </div>
+                  
                   <div className="p-3 text-right flex justify-end gap-2">
                     <IconButton variant='primary' label='' shape='pill' onClick={() =>
                       window.location.href = `/task/task-batches/${batch._id}`
@@ -97,6 +99,7 @@ const TaskBatchList = () => {
 
 
                   </div>
+                </div>
                 </div>
               ))}
             </div>
